@@ -1,0 +1,30 @@
+{
+  "name": "fullstack-02",
+  "version": "1.0.0",
+  "description": "fullstack-02",
+  "main": "index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "format": "prettier --write *.js",
+    "dev": "nodemon src/index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/treewit12/fullstack-02.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/treewit12/fullstack-02/issues"
+  },
+  "homepage": "https://github.com/treewit12/fullstack-02#readme",
+  "devDependencies": {
+    "nodemon": "^3.1.11",
+    "prettier": "^3.8.0"
+  },
+  "dependencies": {
+    "dotenv": "^17.2.3",
+    "express": "^5.2.1"
+  }
+}
