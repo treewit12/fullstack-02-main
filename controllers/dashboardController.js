@@ -25,7 +25,7 @@ exports.getDashboard = (req, res) => {
                                 SELECT p.name as product_name,
                                 t.transaction_type,
                                 t.quantity,
-                                t.created_at
+                                datetime(t.created_at, '+7 hours') as created_at
                                 FROM transactions t
                                 JOIN products p ON p.id = t.product_id
                                 ORDER BY t.id DESC
