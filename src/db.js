@@ -40,7 +40,6 @@ db.serialize(() => {
         CREATE TABLE IF NOT EXISTS suppliers (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT NOT NULL,
-            contact TEXT,
             phone TEXT,
             email TEXT,
             address TEXT,

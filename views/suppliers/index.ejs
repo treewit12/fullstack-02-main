@@ -17,15 +17,14 @@
 
     <% suppliers.forEach(supplier => { %>
         <tr>
-            <td><%= supplier.supplier_id %></td>
-            <td><%= supplier.supplier_name %></td>
+            <td><%= supplier.id %></td>
+            <td><%= supplier.name %></td>
             <td><%= supplier.phone %></td>
             <td><%= supplier.email %></td>
             <td><%= supplier.address %></td>
             <td>
-                <a href="/suppliers/edit/<%= supplier.supplier_id %>">แก้ไข</a>
-                |
-                <a href="/suppliers/delete/<%= supplier.supplier_id %>" 
+                <a href="/suppliers/edit/<%= supplier.id %>">แก้ไข</a> |
+                <a href="/suppliers/delete/<%= supplier.id %>" 
                    onclick="return confirm('ยืนยันการลบ?')">ลบ</a>
             </td>
         </tr>
