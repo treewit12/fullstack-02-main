@@ -1,72 +1,130 @@
 <%- include('navbar') %>
 
-<h1>Dashboard</h1>
+<link rel="stylesheet" href="/css/dashboard.css">
 
-<div class="card-grid">
+<div class="dashboard">
 
-    <div class="card">
-        <h3>รับเข้า (IN)</h3>
-        <h2><%= summary.total_in || 0 %></h2>
+    <h1>Dashboard</h1>
+
+    <!-- Summary Cards -->
+    <div class="cards">
+        <div class="card">
+            <h3>Total Products</h3>
+            <p><%= totalProducts %></p>
+        </div>
+
+        <div class="card">
+            <h3>Stock IN</h3>
+            <p><%= totalIn %></p>
+        </div>
+
+        <div class="card">
+            <h3>Stock OUT</h3>
+            <p><%= totalOut %></p>
+        </div>
+
+        <div class="card">
+            <h3>Total Revenue</h3>
+            <p><%= totalRevenue %> ฿</p>
+        </div>
     </div>
 
-    <div class="card">
-        <h3>จ่ายออก (OUT)</h3>
-        <h2><%= summary.total_out || 0 %></h2>
+
+    <!-- Middle Section -->
+    <div class="middle">
+
+        <!-- Chart -->
+        <div class="box chart-box">
+            <h3>Stock Summary</h3>
+            <div class="chart-container">
+                <canvas id="stockChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Category Distribution -->
+        <div class="box">
+            <h3>Category Distribution</h3>
+
+            <% categories.forEach(c => { %>
+                <div class="progress-row">
+                    <span><%= c.name %></span>
+
+                    <div class="progress">
+                        <div class="progress-bar"
+                             style="width:<%= c.percent || 0 %>%">
+                        </div>
+                    </div>
+
+                    <span><%= c.percent || 0 %>%</span>
+                </div>
+            <% }) %>
+
+        </div>
+
+    </div>
+
+
+    <!-- Recent Transactions -->
+    <div class="box table-box">
+        <h3>Recent Transactions</h3>
+
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>สินค้า</th>
+                        <th>ประเภท</th>
+                        <th>จำนวน</th>
+                        <th>วันที่</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    <% recentTransactions.forEach(t => { %>
+                        <tr>
+                            <td><%= t.product_name %></td>
+                            <td class="<%= t.transaction_type %>">
+                                <%= t.transaction_type %>
+                            </td>
+                            <td><%= t.quantity %></td>
+                            <td><%= t.created_at %></td>
+                        </tr>
+                    <% }) %>
+                </tbody>
+            </table>
+        </div>
     </div>
 
 </div>
 
-<hr>
 
-<h2>สัดส่วนการทำรายการ</h2>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-<% const totalIn = summary.total_in || 0; %>
-<% const totalOut = summary.total_out || 0; %>
+<script>
+const ctx = document.getElementById('stockChart');
 
-<% if (totalIn === 0 && totalOut === 0) { %>
-
-    <p style="text-align:center; margin-top:20px;">
-        ยังไม่มีข้อมูล Transaction
-    </p>
-
-<% } else { %>
-
-    <div style="width: 400px; margin: auto;">
-        <canvas id="transactionChart"></canvas>
-    </div>
-
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-    <script>
-        document.addEventListener("DOMContentLoaded", function () {
-
-            const ctx = document.getElementById('transactionChart').getContext('2d');
-
-            new Chart(ctx, {
-                type: 'doughnut',
-                data: {
-                    labels: ['รับเข้า (IN)', 'จ่ายออก (OUT)'],
-                    datasets: [{
-                        data: [<%= totalIn %>, <%= totalOut %>],
-                        backgroundColor: [
-                            '#2ecc71',
-                            '#e74c3c'
-                        ],
-                        borderWidth: 1
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    cutout: '65%',   // ทำให้ดูสวยขึ้น
-                    plugins: {
-                        legend: {
-                            position: 'bottom'
-                        }
-                    }
+new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+        labels: ['IN', 'OUT'],
+        datasets: [{
+            data: [<%= totalIn || 0 %>, <%= totalOut || 0 %>],
+            backgroundColor: ['#2563eb', '#dc2626'],
+            borderWidth: 0
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        cutout: '65%',
+        plugins: {
+            legend: {
+                position: 'bottom',
+                labels: {
+                    boxWidth: 12
                 }
-            });
-
-        });
-    </script>
-
-<% } %>
+            }
+        }
+    }
+});
+</script>

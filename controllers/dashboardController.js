@@ -2,42 +2,48 @@ const db = require('../src/db');
 
 exports.getDashboard = (req, res) => {
 
-    const summarySql = `
-        SELECT
-            (SELECT COUNT(*) FROM products) AS total_products,
-            (SELECT COUNT(*) FROM products WHERE stock <= 2) AS low_stock,
-            (SELECT IFNULL(SUM(quantity), 0) FROM transactions WHERE transaction_type = 'IN') AS total_in,
-            (SELECT IFNULL(SUM(quantity), 0) FROM transactions WHERE transaction_type = 'OUT') AS total_out
-    `;
+    db.serialize(() => {
 
-    const categorySql = `
-        SELECT c.name, IFNULL(SUM(p.stock), 0) AS total_stock
-        FROM products p
-        LEFT JOIN categories c ON p.category_id = c.id
-        GROUP BY c.name
-    `;
+        db.get("SELECT COUNT(*) as total FROM products", (err, row1) => {
 
-    const recentSql = `
-        SELECT p.name, t.quantity, t.transaction_type, t.created_at
-        FROM transactions t
-        LEFT JOIN products p ON t.product_id = p.id
-        ORDER BY t.id DESC
-        LIMIT 5
-    `;
+            db.get("SELECT SUM(quantity) as total FROM transactions WHERE transaction_type='IN'", (err, row2) => {
 
-    db.get(summarySql, [], (err, summary) => {
-        if (err) return console.error(err);
+                db.get("SELECT SUM(quantity) as total FROM transactions WHERE transaction_type='OUT'", (err, row3) => {
 
-        db.all(categorySql, [], (err, categories) => {
-            if (err) return console.error(err);
+                    db.get("SELECT SUM(total_price) as total FROM transactions WHERE transaction_type='OUT'", (err, row4) => {
 
-            db.all(recentSql, [], (err, recent) => {
-                if (err) return console.error(err);
+                        db.all(`
+                            SELECT categories.name,
+                            ROUND(COUNT(products.id) * 100.0 /
+                            (SELECT COUNT(*) FROM products), 0) as percent
+                            FROM categories
+                            LEFT JOIN products ON products.category_id = categories.id
+                            GROUP BY categories.id
+                        `, (err, categories) => {
 
-                res.render('dashboard', {
-                    summary,
-                    categories,
-                    recent
+                            db.all(`
+                                SELECT p.name as product_name,
+                                t.transaction_type,
+                                t.quantity,
+                                t.created_at
+                                FROM transactions t
+                                JOIN products p ON p.id = t.product_id
+                                ORDER BY t.id DESC
+                                LIMIT 5
+                            `, (err, recentTransactions) => {
+
+                                res.render('dashboard', {
+                                    totalProducts: row1.total || 0,
+                                    totalIn: row2.total || 0,
+                                    totalOut: row3.total || 0,
+                                    totalRevenue: row4.total || 0,
+                                    categories,
+                                    recentTransactions
+                                });
+
+                            });
+                        });
+                    });
                 });
             });
         });

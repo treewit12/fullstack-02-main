@@ -23,7 +23,7 @@ exports.getTransactions = (req, res) => {
     db.all(sql, [], (err, transactions) => {
         if (err) {
             console.error(err);
-            return res.send("Database error (transactions)");
+            return res.status(500).send("Database error (transactions)");
         }
 
         res.render('transactions', {
@@ -35,66 +35,88 @@ exports.getTransactions = (req, res) => {
 
 
 // ======================
-// เพิ่มรายการใหม่ + อัปเดต Stock
+// เพิ่มรายการใหม่ + อัปเดต Stock (แบบปลอดภัย)
 // ======================
 exports.createTransaction = (req, res) => {
 
     let { product_id, transaction_type, quantity, total_price } = req.body;
 
+    // แปลงค่า
     quantity = parseInt(quantity);
     total_price = parseFloat(total_price);
+    transaction_type = transaction_type?.toUpperCase();
 
-    // ตรวจสอบค่า
-    if (!product_id || !transaction_type || quantity <= 0) {
-        return res.send("Invalid data");
+    // ตรวจสอบข้อมูล
+    if (!product_id || !transaction_type || quantity <= 0 || isNaN(total_price)) {
+        return res.status(400).send("Invalid data");
+    }
+
+    if (transaction_type !== 'IN' && transaction_type !== 'OUT') {
+        return res.status(400).send("Transaction type must be IN or OUT");
     }
 
     // เช็ค stock ก่อน
     db.get("SELECT stock FROM products WHERE id = ?", [product_id], (err, product) => {
 
-        if (err || !product) {
+        if (err) {
             console.error(err);
-            return res.send("Product not found");
+            return res.status(500).send("Database error");
+        }
+
+        if (!product) {
+            return res.status(404).send("Product not found");
         }
 
         let newStock = product.stock;
 
         if (transaction_type === 'IN') {
             newStock += quantity;
-        } else if (transaction_type === 'OUT') {
+        } 
+        else if (transaction_type === 'OUT') {
 
             if (product.stock < quantity) {
-                return res.send("Stock ไม่พอ");
+                return res.status(400).send("Stock ไม่พอ");
             }
 
             newStock -= quantity;
         }
 
-        // เริ่มบันทึก
-        db.run(`
-            INSERT INTO transactions
-            (product_id, transaction_type, quantity, total_price)
-            VALUES (?, ?, ?, ?)
-        `, [product_id, transaction_type, quantity, total_price], function(err) {
+        // ======================
+        // เริ่ม DB Transaction
+        // ======================
+        db.serialize(() => {
 
-            if (err) {
-                console.error(err);
-                return res.send("Insert error");
-            }
+            db.run("BEGIN TRANSACTION");
 
-            // อัปเดต stock
-            db.run(
-                "UPDATE products SET stock = ? WHERE id = ?",
-                [newStock, product_id],
-                (err) => {
-                    if (err) {
-                        console.error(err);
-                        return res.send("Stock update error");
-                    }
+            db.run(`
+                INSERT INTO transactions
+                (product_id, transaction_type, quantity, total_price)
+                VALUES (?, ?, ?, ?)
+            `, [product_id, transaction_type, quantity, total_price], function(err) {
 
-                    res.redirect('/dashboard'); // กลับ dashboard เลย
+                if (err) {
+                    console.error(err);
+                    db.run("ROLLBACK");
+                    return res.status(500).send("Insert error");
                 }
-            );
+
+                db.run(
+                    "UPDATE products SET stock = ? WHERE id = ?",
+                    [newStock, product_id],
+                    (err) => {
+
+                        if (err) {
+                            console.error(err);
+                            db.run("ROLLBACK");
+                            return res.status(500).send("Stock update error");
+                        }
+
+                        db.run("COMMIT");
+                        res.redirect('/dashboard');
+                    }
+                );
+
+            });
 
         });
 

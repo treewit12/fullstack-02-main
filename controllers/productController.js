@@ -14,16 +14,10 @@ exports.getProducts = (req, res) => {
     `;
 
     db.all(sql, [], (err, products) => {
-        if (err) {
-            console.log(err.message);
-            return res.send("Database error (products)");
-        }
+        if (err) return res.send("Database error (products)");
 
         db.all("SELECT * FROM categories", [], (err, categories) => {
-            if (err) {
-                console.log(err.message);
-                return res.send("Database error (categories)");
-            }
+            if (err) return res.send("Database error (categories)");
 
             res.render('products', { 
                 products, 
@@ -37,7 +31,7 @@ exports.getProducts = (req, res) => {
 
 
 // ==========================
-// เพิ่มสินค้า
+// เพิ่มสินค้า (บันทึก IN อัตโนมัติ)
 // ==========================
 exports.addProduct = (req, res) => {
 
@@ -47,22 +41,55 @@ exports.addProduct = (req, res) => {
     stock = parseInt(stock);
     category_id = category_id || null;
 
-    if (!name || isNaN(price) || isNaN(stock)) {
+    if (!name || isNaN(price) || isNaN(stock) || stock < 0) {
         return res.send("ข้อมูลไม่ถูกต้อง");
     }
 
-    db.run(
-        `INSERT INTO products (name, brand, price, stock, category_id)
-         VALUES (?, ?, ?, ?, ?)`,
-        [name, brand || null, price, stock, category_id],
-        (err) => {
-            if (err) {
-                console.log("INSERT ERROR:", err.message);
-                return res.send(err.message);
+    db.serialize(() => {
+
+        db.run("BEGIN TRANSACTION");
+
+        db.run(
+            `INSERT INTO products (name, brand, price, stock, category_id)
+             VALUES (?, ?, ?, ?, ?)`,
+            [name, brand || null, price, stock, category_id],
+            function (err) {
+
+                if (err) {
+                    db.run("ROLLBACK");
+                    return res.send(err.message);
+                }
+
+                const productId = this.lastID;
+
+                if (stock > 0) {
+                    const totalPrice = price * stock;
+
+                    db.run(
+                        `INSERT INTO transactions 
+                        (product_id, transaction_type, quantity, total_price)
+                        VALUES (?, 'IN', ?, ?)`,
+                        [productId, stock, totalPrice],
+                        (err) => {
+
+                            if (err) {
+                                db.run("ROLLBACK");
+                                return res.send(err.message);
+                            }
+
+                            db.run("COMMIT");
+                            res.redirect('/products');
+                        }
+                    );
+                } else {
+                    db.run("COMMIT");
+                    res.redirect('/products');
+                }
+
             }
-            res.redirect('/products');
-        }
-    );
+        );
+
+    });
 };
 
 
@@ -77,15 +104,12 @@ exports.editForm = (req, res) => {
     db.get("SELECT * FROM products WHERE id = ?", [id], (err, product) => {
 
         if (err || !product) {
-            console.log(err?.message);
             return res.send("ไม่พบสินค้า");
         }
 
         db.all("SELECT * FROM categories", [], (err, categories) => {
-            if (err) {
-                console.log(err.message);
-                return res.send("Database error");
-            }
+
+            if (err) return res.send("Database error");
 
             res.render('editProduct', { 
                 product, 
@@ -99,7 +123,7 @@ exports.editForm = (req, res) => {
 
 
 // ==========================
-// อัปเดตสินค้า
+// อัปเดตสินค้า (ตรวจความต่าง stock)
 // ==========================
 exports.updateProduct = (req, res) => {
 
@@ -110,23 +134,67 @@ exports.updateProduct = (req, res) => {
     stock = parseInt(stock);
     category_id = category_id || null;
 
-    if (!name || isNaN(price) || isNaN(stock)) {
+    if (!name || isNaN(price) || isNaN(stock) || stock < 0) {
         return res.send("ข้อมูลไม่ถูกต้อง");
     }
 
-    db.run(
-        `UPDATE products
-         SET name=?, brand=?, price=?, stock=?, category_id=?
-         WHERE id=?`,
-        [name, brand || null, price, stock, category_id, id],
-        (err) => {
-            if (err) {
-                console.log("UPDATE ERROR:", err.message);
-                return res.send(err.message);
-            }
-            res.redirect('/products');
-        }
-    );
+    db.get("SELECT * FROM products WHERE id = ?", [id], (err, product) => {
+
+        if (err || !product) return res.send("ไม่พบสินค้า");
+
+        const oldStock = product.stock;
+        const diff = stock - oldStock;
+
+        db.serialize(() => {
+
+            db.run("BEGIN TRANSACTION");
+
+            db.run(
+                `UPDATE products
+                 SET name=?, brand=?, price=?, stock=?, category_id=?
+                 WHERE id=?`,
+                [name, brand || null, price, stock, category_id, id],
+                (err) => {
+
+                    if (err) {
+                        db.run("ROLLBACK");
+                        return res.send(err.message);
+                    }
+
+                    if (diff !== 0) {
+
+                        const type = diff > 0 ? 'IN' : 'OUT';
+                        const quantity = Math.abs(diff);
+                        const totalPrice = price * quantity;
+
+                        db.run(
+                            `INSERT INTO transactions 
+                            (product_id, transaction_type, quantity, total_price)
+                            VALUES (?, ?, ?, ?)`,
+                            [id, type, quantity, totalPrice],
+                            (err) => {
+
+                                if (err) {
+                                    db.run("ROLLBACK");
+                                    return res.send(err.message);
+                                }
+
+                                db.run("COMMIT");
+                                res.redirect('/products');
+                            }
+                        );
+
+                    } else {
+                        db.run("COMMIT");
+                        res.redirect('/products');
+                    }
+
+                }
+            );
+
+        });
+
+    });
 };
 
 
@@ -139,10 +207,7 @@ exports.deleteProduct = (req, res) => {
     const id = req.params.id;
 
     db.run("DELETE FROM products WHERE id = ?", [id], (err) => {
-        if (err) {
-            console.log("DELETE ERROR:", err.message);
-            return res.send(err.message);
-        }
+        if (err) return res.send(err.message);
         res.redirect('/products');
     });
 };
@@ -150,7 +215,7 @@ exports.deleteProduct = (req, res) => {
 
 
 // ==========================
-// ขายสินค้า (พร้อมบันทึก Transaction)
+// ขายสินค้า (ลด stock + บันทึก OUT)
 // ==========================
 exports.sellProduct = (req, res) => {
 
@@ -163,10 +228,7 @@ exports.sellProduct = (req, res) => {
 
     db.get("SELECT * FROM products WHERE id = ?", [id], (err, product) => {
 
-        if (err || !product) {
-            console.log(err?.message);
-            return res.send("ไม่พบสินค้า");
-        }
+        if (err || !product) return res.send("ไม่พบสินค้า");
 
         if (product.stock < quantity) {
             return res.send("Stock ไม่พอ");
@@ -175,29 +237,41 @@ exports.sellProduct = (req, res) => {
         const newStock = product.stock - quantity;
         const totalPrice = product.price * quantity;
 
-        db.run(
-            "UPDATE products SET stock = ? WHERE id = ?",
-            [newStock, id],
-            (err) => {
+        db.serialize(() => {
 
-                if (err) {
-                    console.log("STOCK UPDATE ERROR:", err.message);
-                    return res.send(err.message);
-                }
+            db.run("BEGIN TRANSACTION");
 
-                db.run(
-                    `INSERT INTO transactions (product_id, transaction_type, quantity, total_price)
-                     VALUES (?, 'OUT', ?, ?)`,
-                    [id, quantity, totalPrice],
-                    (err) => {
-                        if (err) {
-                            console.log("TRANSACTION ERROR:", err.message);
-                            return res.send(err.message);
-                        }
-                        res.redirect('/products');
+            db.run(
+                "UPDATE products SET stock = ? WHERE id = ?",
+                [newStock, id],
+                (err) => {
+
+                    if (err) {
+                        db.run("ROLLBACK");
+                        return res.send(err.message);
                     }
-                );
-            }
-        );
+
+                    db.run(
+                        `INSERT INTO transactions 
+                        (product_id, transaction_type, quantity, total_price)
+                        VALUES (?, 'OUT', ?, ?)`,
+                        [id, quantity, totalPrice],
+                        (err) => {
+
+                            if (err) {
+                                db.run("ROLLBACK");
+                                return res.send(err.message);
+                            }
+
+                            db.run("COMMIT");
+                            res.redirect('/products');
+                        }
+                    );
+
+                }
+            );
+
+        });
+
     });
 };
