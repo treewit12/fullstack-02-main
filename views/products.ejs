@@ -1,6 +1,5 @@
 <%- include('navbar') %>
 
-
 <h2>เพิ่มสินค้า</h2>
 
 <form action="/products" method="POST">
@@ -9,10 +8,21 @@
     <input type="number" name="price" placeholder="ราคา" required>
     <input type="number" name="stock" placeholder="สต็อก" required>
 
+    <!-- หมวดหมู่ -->
     <select name="category_id" required>
         <option value="">-- เลือกหมวดหมู่ --</option>
         <% categories.forEach(c => { %>
             <option value="<%= c.id %>"><%= c.name %></option>
+        <% }) %>
+    </select>
+
+    <!-- ✅ แก้ Supplier ตรงนี้ -->
+    <select name="supplier_id" required>
+        <option value="">-- เลือก Supplier --</option>
+        <% suppliers.forEach(s => { %>
+            <option value="<%= s.id %>">
+                <%= s.name %>
+            </option>
         <% }) %>
     </select>
 
@@ -30,6 +40,7 @@
     <th>ราคา</th>
     <th>สต็อก</th>
     <th>หมวดหมู่</th>
+    <th>Supplier</th>
     <th>ขายสินค้า</th>
     <th>จัดการ</th>
 </tr>
@@ -53,13 +64,14 @@
 
     <td><%= p.category_name || '-' %></td>
 
-    <!-- ระบบขาย -->
+    <!-- แสดงชื่อ Supplier -->
+    <td><%= p.supplier_name || '-' %></td>
+
     <td>
         <% if (p.stock > 0) { %>
             <form action="/products/sell/<%= p.id %>" 
                   method="POST" 
                   style="display:inline;">
-
                 <input type="number"
                        name="quantity"
                        min="1"
@@ -67,7 +79,6 @@
                        value="1"
                        required
                        style="width:70px;">
-
                 <button type="submit">ขาย</button>
             </form>
         <% } else { %>
@@ -82,12 +93,10 @@
               method="POST"
               style="display:inline;"
               onsubmit="return confirm('ยืนยันการลบ?')">
-
             <button type="submit">ลบ</button>
         </form>
     </td>
 
 </tr>
 <% }) %>
-
 </table>

@@ -22,19 +22,6 @@ db.serialize(() => {
         )
     `);
 
-    // Products
-    db.run(`
-        CREATE TABLE IF NOT EXISTS products (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT NOT NULL,
-            brand TEXT,
-            price REAL NOT NULL,
-            stock INTEGER NOT NULL,
-            category_id INTEGER,
-            FOREIGN KEY (category_id) REFERENCES categories(id)
-        )
-    `);
-
     // Suppliers
     db.run(`
         CREATE TABLE IF NOT EXISTS suppliers (
@@ -44,8 +31,23 @@ db.serialize(() => {
             email TEXT,
             address TEXT,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    )
-`);
+        )
+    `);
+
+    // Products  ✅ เพิ่ม supplier_id แล้ว
+    db.run(`
+        CREATE TABLE IF NOT EXISTS products (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            brand TEXT,
+            price REAL NOT NULL,
+            stock INTEGER NOT NULL,
+            category_id INTEGER,
+            supplier_id INTEGER,
+            FOREIGN KEY (category_id) REFERENCES categories(id),
+            FOREIGN KEY (supplier_id) REFERENCES suppliers(id)
+        )
+    `);
 
     // Transactions
     db.run(`

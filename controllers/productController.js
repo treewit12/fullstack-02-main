@@ -7,39 +7,53 @@ const db = require('../src/db');
 exports.getProducts = (req, res) => {
 
     const sql = `
-        SELECT products.*, categories.name AS category_name
+        SELECT 
+            products.*, 
+            categories.name AS category_name,
+            suppliers.name AS supplier_name
         FROM products
-        LEFT JOIN categories ON products.category_id = categories.id
+        LEFT JOIN categories 
+            ON products.category_id = categories.id
+        LEFT JOIN suppliers 
+            ON products.supplier_id = suppliers.id
         ORDER BY products.id DESC
     `;
 
     db.all(sql, [], (err, products) => {
-        if (err) return res.send("Database error (products)");
+        if (err) {
+            console.log(err.message);
+            return res.send(err.message);
+        }
 
         db.all("SELECT * FROM categories", [], (err, categories) => {
-            if (err) return res.send("Database error (categories)");
+            if (err) return res.send(err.message);
 
-            res.render('products', { 
-                products, 
-                categories,
-                currentPage: 'products'
+            db.all("SELECT * FROM suppliers", [], (err, suppliers) => {
+                if (err) return res.send(err.message);
+
+                res.render('products', { 
+                    products, 
+                    categories,
+                    suppliers,
+                    currentPage: 'products'
+                });
             });
         });
     });
 };
 
 
-
 // ==========================
-// เพิ่มสินค้า (บันทึก IN อัตโนมัติ)
+// เพิ่มสินค้า
 // ==========================
 exports.addProduct = (req, res) => {
 
-    let { name, brand, price, stock, category_id } = req.body;
+    let { name, brand, price, stock, category_id, supplier_id } = req.body;
 
     price = parseFloat(price);
     stock = parseInt(stock);
     category_id = category_id || null;
+    supplier_id = supplier_id || null;
 
     if (!name || isNaN(price) || isNaN(stock) || stock < 0) {
         return res.send("ข้อมูลไม่ถูกต้อง");
@@ -50,9 +64,10 @@ exports.addProduct = (req, res) => {
         db.run("BEGIN TRANSACTION");
 
         db.run(
-            `INSERT INTO products (name, brand, price, stock, category_id)
-             VALUES (?, ?, ?, ?, ?)`,
-            [name, brand || null, price, stock, category_id],
+            `INSERT INTO products 
+            (name, brand, price, stock, category_id, supplier_id)
+            VALUES (?, ?, ?, ?, ?, ?)`,
+            [name, brand || null, price, stock, category_id, supplier_id],
             function (err) {
 
                 if (err) {
@@ -93,9 +108,8 @@ exports.addProduct = (req, res) => {
 };
 
 
-
 // ==========================
-// ฟอร์มแก้ไขสินค้า
+// แก้ไขสินค้า (ฟอร์ม)
 // ==========================
 exports.editForm = (req, res) => {
 
@@ -108,31 +122,35 @@ exports.editForm = (req, res) => {
         }
 
         db.all("SELECT * FROM categories", [], (err, categories) => {
+            if (err) return res.send(err.message);
 
-            if (err) return res.send("Database error");
+            db.all("SELECT * FROM suppliers", [], (err, suppliers) => {
+                if (err) return res.send(err.message);
 
-            res.render('editProduct', { 
-                product, 
-                categories,
-                currentPage: 'products'
+                res.render('editProduct', { 
+                    product, 
+                    categories,
+                    suppliers,
+                    currentPage: 'products'
+                });
             });
         });
     });
 };
 
 
-
 // ==========================
-// อัปเดตสินค้า (ตรวจความต่าง stock)
+// อัปเดตสินค้า
 // ==========================
 exports.updateProduct = (req, res) => {
 
     const id = req.params.id;
-    let { name, brand, price, stock, category_id } = req.body;
+    let { name, brand, price, stock, category_id, supplier_id } = req.body;
 
     price = parseFloat(price);
     stock = parseInt(stock);
     category_id = category_id || null;
+    supplier_id = supplier_id || null;
 
     if (!name || isNaN(price) || isNaN(stock) || stock < 0) {
         return res.send("ข้อมูลไม่ถูกต้อง");
@@ -151,9 +169,9 @@ exports.updateProduct = (req, res) => {
 
             db.run(
                 `UPDATE products
-                 SET name=?, brand=?, price=?, stock=?, category_id=?
+                 SET name=?, brand=?, price=?, stock=?, category_id=?, supplier_id=?
                  WHERE id=?`,
-                [name, brand || null, price, stock, category_id, id],
+                [name, brand || null, price, stock, category_id, supplier_id, id],
                 (err) => {
 
                     if (err) {
@@ -198,7 +216,6 @@ exports.updateProduct = (req, res) => {
 };
 
 
-
 // ==========================
 // ลบสินค้า
 // ==========================
@@ -207,22 +224,22 @@ exports.deleteProduct = (req, res) => {
     const id = req.params.id;
 
     db.run("DELETE FROM products WHERE id = ?", [id], (err) => {
-        if (err) return res.send(err.message);
+        if (err) return res.send("ลบสินค้าไม่สำเร็จ");
+
         res.redirect('/products');
     });
 };
 
 
-
 // ==========================
-// ขายสินค้า (ลด stock + บันทึก OUT)
+// ขายสินค้า
 // ==========================
 exports.sellProduct = (req, res) => {
 
     const id = req.params.id;
     const quantity = parseInt(req.body.quantity);
 
-    if (!quantity || quantity <= 0) {
+    if (isNaN(quantity) || quantity <= 0) {
         return res.send("จำนวนไม่ถูกต้อง");
     }
 
@@ -231,7 +248,7 @@ exports.sellProduct = (req, res) => {
         if (err || !product) return res.send("ไม่พบสินค้า");
 
         if (product.stock < quantity) {
-            return res.send("Stock ไม่พอ");
+            return res.send("สินค้าไม่พอ");
         }
 
         const newStock = product.stock - quantity;
@@ -248,11 +265,11 @@ exports.sellProduct = (req, res) => {
 
                     if (err) {
                         db.run("ROLLBACK");
-                        return res.send(err.message);
+                        return res.send("อัปเดตสต็อกไม่สำเร็จ");
                     }
 
                     db.run(
-                        `INSERT INTO transactions 
+                        `INSERT INTO transactions
                         (product_id, transaction_type, quantity, total_price)
                         VALUES (?, 'OUT', ?, ?)`,
                         [id, quantity, totalPrice],
@@ -260,7 +277,7 @@ exports.sellProduct = (req, res) => {
 
                             if (err) {
                                 db.run("ROLLBACK");
-                                return res.send(err.message);
+                                return res.send("บันทึกธุรกรรมไม่สำเร็จ");
                             }
 
                             db.run("COMMIT");
