@@ -1,0 +1,25 @@
+const express = require('express');
+const router = express.Router();
+const db = require('../src/db');
+const supplierController = require('../controllers/supplierController');
+
+
+// แสดงรายการ
+router.get('/', supplierController.getSuppliers);
+
+// หน้าเพิ่ม
+router.get('/add', supplierController.addForm);
+
+// เพิ่ม
+router.post('/add', supplierController.addSupplier);
+
+// หน้าแก้ไข
+router.get('/edit/:id', supplierController.editForm);
+
+// อัปเดต
+router.post('/edit/:id', supplierController.updateSupplier);
+
+// ลบ
+router.get('/delete/:id', supplierController.deleteSupplier);
+
+module.exports = router;

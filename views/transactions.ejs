@@ -1,0 +1,36 @@
+<%- include('navbar') %>
+
+<h1>Transactions</h1>
+
+<table border="1" cellpadding="8">
+<tr>
+    <th>สินค้า</th>
+    <th>หมวดหมู่</th>
+    <th>ประเภทรายการ</th>
+    <th>จำนวน</th>
+    <th>ราคารวม</th>
+    <th>วันที่</th>
+</tr>
+
+<% transactions.forEach(t => { %>
+<tr>
+    <td><%= t.product_name %></td>
+    <td><%= t.category_name %></td>
+
+    <td>
+        <% if (t.transaction_type === 'IN') { %>
+            <span style="color:green;">รับเข้า</span>
+        <% } else if (t.transaction_type === 'OUT') { %>
+            <span style="color:red;">จ่ายออก</span>
+        <% } else { %>
+            <%= t.transaction_type || '-' %>
+        <% } %>
+    </td>
+
+    <td><%= t.quantity %></td>
+    <td><%= t.total_price %></td>
+    <td><%= t.created_at %></td>
+</tr>
+<% }) %>
+
+</table>

@@ -1,0 +1,24 @@
+
+<link rel="stylesheet" href="/css/style.css">
+<h2>แก้ไขสินค้า</h2>
+
+<form action="/products/update/<%= product.id %>" method="POST">
+    <input type="text" name="name" value="<%= product.name %>" required>
+    <input type="text" name="brand" value="<%= product.brand %>">
+    <input type="number" name="price" value="<%= product.price %>">
+    <input type="number" name="stock" value="<%= product.stock %>">
+
+    <select name="category_id">
+        <% categories.forEach(c => { %>
+            <option value="<%= c.id %>"
+                <%= c.id == product.category_id ? 'selected' : '' %>>
+                <%= c.name %>
+            </option>
+        <% }) %>
+    </select>
+
+    <button type="submit">บันทึก</button>
+</form>
+
+<br>
+<a href="/products">กลับ</a>

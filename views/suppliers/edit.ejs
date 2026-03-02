@@ -1,0 +1,35 @@
+<%- include('../navbar') %>
+
+<h1>แก้ไข Supplier</h1>
+
+<form method="POST" action="/suppliers/edit/<%= supplier.supplier_id %>">
+    
+    <label>ชื่อ:</label>
+    <input type="text" 
+           name="supplier_name" 
+           value="<%= supplier ? supplier.supplier_name : '' %>" 
+           required>
+    <br><br>
+
+    <label>เบอร์:</label>
+    <input type="text" 
+           name="phone" 
+           value="<%= supplier ? supplier.phone : '' %>">
+    <br><br>
+
+    <label>Email:</label>
+    <input type="email" 
+           name="email" 
+           value="<%= supplier ? supplier.email : '' %>">
+    <br><br>
+
+    <label>ที่อยู่:</label>
+    <input type="text" 
+           name="address" 
+           value="<%= supplier ? supplier.address : '' %>">
+    <br><br>
+
+    <button type="submit">อัปเดต</button>
+    <a href="/suppliers">ยกเลิก</a>
+
+</form>

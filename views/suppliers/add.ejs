@@ -1,0 +1,24 @@
+<%- include('../navbar') %>
+
+<h1>เพิ่ม Supplier</h1>
+
+<form action="/suppliers/add" method="POST">
+    <label>ชื่อ:</label>
+    <input type="text" name="supplier_name" required>
+    <br><br>
+
+    <label>เบอร์:</label>
+    <input type="text" name="phone">
+    <br><br>
+
+    <label>Email:</label>
+    <input type="email" name="email">
+    <br><br>
+
+    <label>ที่อยู่:</label>
+    <input type="text" name="address">
+    <br><br>
+
+    <button type="submit">บันทึก</button>
+    <a href="/suppliers">ยกเลิก</a>
+</form>

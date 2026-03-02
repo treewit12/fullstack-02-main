@@ -1,0 +1,33 @@
+<%- include('../navbar') %>
+
+<h1>รายการ Supplier</h1>
+
+<a href="/suppliers/add">+ เพิ่ม Supplier</a>
+<br><br>
+
+<table border="1" cellpadding="8">
+    <tr>
+        <th>ID</th>
+        <th>ชื่อ</th>
+        <th>เบอร์</th>
+        <th>Email</th>
+        <th>ที่อยู่</th>
+        <th>จัดการ</th>
+    </tr>
+
+    <% suppliers.forEach(supplier => { %>
+        <tr>
+            <td><%= supplier.supplier_id %></td>
+            <td><%= supplier.supplier_name %></td>
+            <td><%= supplier.phone %></td>
+            <td><%= supplier.email %></td>
+            <td><%= supplier.address %></td>
+            <td>
+                <a href="/suppliers/edit/<%= supplier.supplier_id %>">แก้ไข</a>
+                |
+                <a href="/suppliers/delete/<%= supplier.supplier_id %>" 
+                   onclick="return confirm('ยืนยันการลบ?')">ลบ</a>
+            </td>
+        </tr>
+    <% }) %>
+</table>

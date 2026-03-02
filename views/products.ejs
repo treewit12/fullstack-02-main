@@ -1,0 +1,93 @@
+<%- include('navbar') %>
+
+
+<h2>เพิ่มสินค้า</h2>
+
+<form action="/products" method="POST">
+    <input type="text" name="name" placeholder="ชื่อสินค้า" required>
+    <input type="text" name="brand" placeholder="แบรนด์">
+    <input type="number" name="price" placeholder="ราคา" required>
+    <input type="number" name="stock" placeholder="สต็อก" required>
+
+    <select name="category_id" required>
+        <option value="">-- เลือกหมวดหมู่ --</option>
+        <% categories.forEach(c => { %>
+            <option value="<%= c.id %>"><%= c.name %></option>
+        <% }) %>
+    </select>
+
+    <button type="submit">เพิ่ม</button>
+</form>
+
+<hr>
+
+<h2>รายการสินค้า</h2>
+
+<table border="1" cellpadding="8">
+<tr>
+    <th>ชื่อ</th>
+    <th>แบรนด์</th>
+    <th>ราคา</th>
+    <th>สต็อก</th>
+    <th>หมวดหมู่</th>
+    <th>ขายสินค้า</th>
+    <th>จัดการ</th>
+</tr>
+
+<% products.forEach(p => { %>
+<tr style="<%= p.stock <= 5 ? 'background-color:#ffe5e5;' : '' %>">
+
+    <td><%= p.name %></td>
+    <td><%= p.brand %></td>
+    <td><%= p.price %></td>
+
+    <td>
+        <%= p.stock %>
+        <% if (p.stock <= 5 && p.stock > 0) { %>
+            <span style="color:red;">(ใกล้หมด)</span>
+        <% } %>
+        <% if (p.stock == 0) { %>
+            <span style="color:red;">(หมด)</span>
+        <% } %>
+    </td>
+
+    <td><%= p.category_name || '-' %></td>
+
+    <!-- ระบบขาย -->
+    <td>
+        <% if (p.stock > 0) { %>
+            <form action="/products/sell/<%= p.id %>" 
+                  method="POST" 
+                  style="display:inline;">
+
+                <input type="number"
+                       name="quantity"
+                       min="1"
+                       max="<%= p.stock %>"
+                       value="1"
+                       required
+                       style="width:70px;">
+
+                <button type="submit">ขาย</button>
+            </form>
+        <% } else { %>
+            <span style="color:red;">ขายไม่ได้</span>
+        <% } %>
+    </td>
+
+    <td>
+        <a href="/products/edit/<%= p.id %>">แก้ไข</a>
+
+        <form action="/products/<%= p.id %>?_method=DELETE"
+              method="POST"
+              style="display:inline;"
+              onsubmit="return confirm('ยืนยันการลบ?')">
+
+            <button type="submit">ลบ</button>
+        </form>
+    </td>
+
+</tr>
+<% }) %>
+
+</table>

@@ -1,0 +1,72 @@
+<%- include('navbar') %>
+
+<h1>Dashboard</h1>
+
+<div class="card-grid">
+
+    <div class="card">
+        <h3>รับเข้า (IN)</h3>
+        <h2><%= summary.total_in || 0 %></h2>
+    </div>
+
+    <div class="card">
+        <h3>จ่ายออก (OUT)</h3>
+        <h2><%= summary.total_out || 0 %></h2>
+    </div>
+
+</div>
+
+<hr>
+
+<h2>สัดส่วนการทำรายการ</h2>
+
+<% const totalIn = summary.total_in || 0; %>
+<% const totalOut = summary.total_out || 0; %>
+
+<% if (totalIn === 0 && totalOut === 0) { %>
+
+    <p style="text-align:center; margin-top:20px;">
+        ยังไม่มีข้อมูล Transaction
+    </p>
+
+<% } else { %>
+
+    <div style="width: 400px; margin: auto;">
+        <canvas id="transactionChart"></canvas>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+
+            const ctx = document.getElementById('transactionChart').getContext('2d');
+
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['รับเข้า (IN)', 'จ่ายออก (OUT)'],
+                    datasets: [{
+                        data: [<%= totalIn %>, <%= totalOut %>],
+                        backgroundColor: [
+                            '#2ecc71',
+                            '#e74c3c'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    cutout: '65%',   // ทำให้ดูสวยขึ้น
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+
+        });
+    </script>
+
+<% } %>
