@@ -11,6 +11,7 @@ const productController = require('./controllers/productController');
 const supplierRoutes = require('./routes/suppliers');
 const employeeRoutes = require('./routes/employeeRoutes');
 const transactionRoutes = require('./routes/transactionRoutes'); // ✅ แก้ตรงนี้
+const reportRoutes = require('./routes/report');
 
 // ================= BASIC SETUP =================
 app.set('view engine', 'ejs');
@@ -45,6 +46,8 @@ app.use('/transactions', transactionRoutes);
 
 app.use('/suppliers', supplierRoutes);
 app.use('/employees', employeeRoutes);
+
+app.use('/reports', reportRoutes);
 
 app.listen(3000, () => {
     console.log('Server running on http://localhost:3000');

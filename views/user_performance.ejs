@@ -1,0 +1,24 @@
+<%- include('navbar') %>
+
+<div class="container">
+    <h1>Transaction Summary Report</h1>
+
+    <table>
+        <thead>
+            <tr>
+                <th>ประเภท</th>
+                <th>จำนวนรายการ</th>
+                <th>จำนวนสินค้ารวม</th>
+            </tr>
+        </thead>
+        <tbody>
+            <% data.forEach(row => { %>
+                <tr>
+                    <td><%= row.transaction_type %></td>
+                    <td><%= row.total_transactions %></td>
+                    <td><%= row.total_quantity %></td>
+                </tr>
+            <% }) %>
+        </tbody>
+    </table>
+</div>

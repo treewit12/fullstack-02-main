@@ -13,6 +13,16 @@ db.serialize(() => {
     `);
 
     // ======================
+    // EMPLOYEES  (เพิ่มใหม่)
+    // ======================
+    db.run(`
+    CREATE TABLE IF NOT EXISTS employees (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        employee_name TEXT NOT NULL
+    )
+    `);
+
+    // ======================
     // PRODUCTS
     // ======================
     db.run(`
@@ -28,27 +38,35 @@ db.serialize(() => {
     `);
 
     // ======================
-    // TRANSACTIONS (อัปเกรดแล้ว)
+    // TRANSACTIONS (อัปเกรด)
     // ======================
     db.run(`
     CREATE TABLE IF NOT EXISTS transactions (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         product_id INTEGER,
-        transaction_type TEXT,  -- IN / OUT
+        employee_id INTEGER,
+        transaction_type TEXT,  
         quantity INTEGER,
         total_price REAL,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY(product_id) REFERENCES products(id)
+        FOREIGN KEY(product_id) REFERENCES products(id),
+        FOREIGN KEY(employee_id) REFERENCES employees(id)
     )
     `);
 
     // ======================
-    // DEFAULT CATEGORIES
+    // DEFAULT DATA
     // ======================
+
+    // Categories
     db.run(`INSERT OR IGNORE INTO categories (id, name) VALUES (1, 'CPU')`);
     db.run(`INSERT OR IGNORE INTO categories (id, name) VALUES (2, 'GPU')`);
     db.run(`INSERT OR IGNORE INTO categories (id, name) VALUES (3, 'RAM')`);
     db.run(`INSERT OR IGNORE INTO categories (id, name) VALUES (4, 'Storage')`);
+
+    // Employees ตัวอย่าง
+    db.run(`INSERT OR IGNORE INTO employees (id, employee_name) VALUES (1, 'Treewit')`);
+    db.run(`INSERT OR IGNORE INTO employees (id, employee_name) VALUES (2, 'Admin')`);
 
 });
 
