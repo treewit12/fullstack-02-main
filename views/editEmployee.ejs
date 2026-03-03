@@ -1,28 +1,51 @@
 <%- include('navbar') %>
-<head>
-    <title>แก้ไขพนักงาน</title>
-</head>
-<body>
+<link rel="stylesheet" href="/css/style.css">
 
-<h2>แก้ไขพนักงาน</h2>
+<div class="container">
+    <div class="form-card">
 
-<form action="/employees/update/<%= employee.employee_id %>" method="POST">
+        <a href="/employees" class="back-link">
+            ← กลับไปหน้าพนักงาน
+        </a>
 
-    <label>ชื่อพนักงาน:</label>
-    <input type="text" name="employee_name"
-           value="<%= employee.employee_name %>" required><br><br>
+        <h1>แก้ไข Employees</h1>
 
-    <label>ตำแหน่ง:</label>
-    <input type="text" name="position"
-           value="<%= employee.position %>" required><br><br>
+        <form action="/employees/update/<%= employee.employee_id %>" method="POST">
 
-    <label>เบอร์โทร:</label>
-    <input type="text" name="phone"
-           value="<%= employee.phone %>" required><br><br>
+            <div class="form-group">
+                <label>ชื่อ Employees</label>
+                <input type="text"
+                       name="employee_name"
+                       value="<%= employee.employee_name %>"
+                       required>
+            </div>
 
-    <button type="submit">อัปเดต</button>
-</form>
-<br>
-<a href="/employees">ยกเลิก</a>
+            <div class="form-group">
+                <label>ตำแหน่ง</label>
+                <input type="text"
+                       name="position"
+                       value="<%= employee.position %>"
+                       required>
+            </div>
 
-</body>
+            <div class="form-group">
+                <label>เบอร์โทร</label>
+                <input type="text"
+                       name="phone"
+                       value="<%= employee.phone %>"
+                       required>
+            </div>
+
+            <div style="display:flex; gap:10px;">
+                <button type="submit" class="btn-success">
+                    บันทึกการแก้ไข
+                </button>
+
+              
+                </a>
+            </div>
+
+        </form>
+
+    </div>
+</div>

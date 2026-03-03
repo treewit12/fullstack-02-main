@@ -1,18 +1,13 @@
 <%- include('navbar') %>
+<link rel="stylesheet" href="/css/style.css">
 
 <h1>Transactions</h1>
 
-<!-- ปุ่มเพิ่มรายการ -->
-<a href="/transactions/add" 
-   style="display:inline-block;
-          padding:8px 14px;
-          background:#28a745;
-          color:white;
-          text-decoration:none;
-          border-radius:6px;
-          margin-bottom:15px;">
+<a href="/transactions/add" class="btn-success">
     + เพิ่มรายการ
 </a>
+
+<br><br>
 
 <table border="1" cellpadding="8">
 <tr>
@@ -33,9 +28,9 @@
 
     <td>
         <% if (t.transaction_type === 'IN') { %>
-            <span style="color:green;">รับเข้า</span>
+            <span class="text-success">รับเข้า</span>
         <% } else if (t.transaction_type === 'OUT') { %>
-            <span style="color:red;">จ่ายออก</span>
+            <span class="text-danger">จ่ายออก</span>
         <% } %>
     </td>
 

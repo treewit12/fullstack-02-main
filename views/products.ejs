@@ -1,4 +1,5 @@
 <%- include('navbar') %>
+<link rel="stylesheet" href="/css/style.css">
 
 <h2>เพิ่มสินค้า</h2>
 
@@ -8,7 +9,6 @@
     <input type="number" name="price" placeholder="ราคา" required>
     <input type="number" name="stock" placeholder="สต็อก" required>
 
-    <!-- หมวดหมู่ -->
     <select name="category_id" required>
         <option value="">-- เลือกหมวดหมู่ --</option>
         <% categories.forEach(c => { %>
@@ -16,17 +16,14 @@
         <% }) %>
     </select>
 
-    <!-- ✅ แก้ Supplier ตรงนี้ -->
     <select name="supplier_id" required>
         <option value="">-- เลือก Supplier --</option>
         <% suppliers.forEach(s => { %>
-            <option value="<%= s.id %>">
-                <%= s.name %>
-            </option>
+            <option value="<%= s.id %>"><%= s.name %></option>
         <% }) %>
     </select>
 
-    <button type="submit">เพิ่ม</button>
+    <button type="submit" class="btn-success">เพิ่ม</button>
 </form>
 
 <hr>
@@ -63,8 +60,6 @@
     </td>
 
     <td><%= p.category_name || '-' %></td>
-
-    <!-- แสดงชื่อ Supplier -->
     <td><%= p.supplier_name || '-' %></td>
 
     <td>
@@ -79,7 +74,7 @@
                        value="1"
                        required
                        style="width:70px;">
-                <button type="submit">ขาย</button>
+                <button type="submit" class="btn-sell">ขาย</button>
             </form>
         <% } else { %>
             <span style="color:red;">ขายไม่ได้</span>
@@ -87,13 +82,15 @@
     </td>
 
     <td>
-        <a href="/products/edit/<%= p.id %>">แก้ไข</a>
+        <a href="/products/edit/<%= p.id %>" class="btn-edit">
+            แก้ไข
+        </a>
 
         <form action="/products/<%= p.id %>?_method=DELETE"
               method="POST"
               style="display:inline;"
               onsubmit="return confirm('ยืนยันการลบ?')">
-            <button type="submit">ลบ</button>
+            <button type="submit" class="btn-delete">ลบ</button>
         </form>
     </td>
 

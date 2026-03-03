@@ -1,42 +1,74 @@
 <%- include('navbar') %>
+<link rel="stylesheet" href="/css/style.css">
 
-<h1>เพิ่มรายการ Transaction</h1>
+<div class="container">
+    <div class="form-card">
 
-<form action="/transactions/create" method="POST">
+        <a href="/transactions" class="back-link">
+            ← กลับไปหน้ารายการ Transaction
+        </a>
 
-    <label>สินค้า:</label>
-    <select name="product_id" required>
-        <% products.forEach(p => { %>
-            <option value="<%= p.id %>"><%= p.name %></option>
-        <% }) %>
-    </select>
-    <br><br>
+        <h1>เพิ่มรายการ Transaction</h1>
 
-    <label>พนักงาน:</label>
-    <select name="employee_id" required>
-        <% employees.forEach(e => { %>
-            <option value="<%= e.employee_id %>">
-                <%= e.employee_name %>
-            </option>
-        <% }) %>
-    </select>
-    <br><br>
+        <form action="/transactions/create" method="POST">
 
-    <label>ประเภท:</label>
-    <select name="transaction_type" required>
-        <option value="IN">IN</option>
-        <option value="OUT">OUT</option>
-    </select>
-    <br><br>
+            <div class="form-group">
+                <label>สินค้า</label>
+                <select name="product_id" required>
+                    <% products.forEach(p => { %>
+                        <option value="<%= p.id %>">
+                            <%= p.name %>
+                        </option>
+                    <% }) %>
+                </select>
+            </div>
 
-    <label>จำนวน:</label>
-    <input type="number" name="quantity" min="1" required>
-    <br><br>
+            <div class="form-group">
+                <label>พนักงาน</label>
+                <select name="employee_id" required>
+                    <% employees.forEach(e => { %>
+                        <option value="<%= e.employee_id %>">
+                            <%= e.employee_name %>
+                        </option>
+                    <% }) %>
+                </select>
+            </div>
 
-    <label>ราคารวม:</label>
-    <input type="number" name="total_price" step="0.01" min="0" required>
-    <br><br>
+            <div class="form-group">
+                <label>ประเภท</label>
+                <select name="transaction_type" required>
+                    <option value="IN">รับเข้า (IN)</option>
+                    <option value="OUT">ขายออก (OUT)</option>
+                </select>
+            </div>
 
-    <button type="submit">บันทึก</button>
+            <div class="form-group">
+                <label>จำนวน</label>
+                <input type="number"
+                       name="quantity"
+                       min="1"
+                       required>
+            </div>
 
-</form>
+            <div class="form-group">
+                <label>ราคารวม (บาท)</label>
+                <input type="number"
+                       name="total_price"
+                       step="0.01"
+                       min="0"
+                       required>
+            </div>
+
+            <div style="display:flex; gap:10px;">
+                <button type="submit" class="btn-success">
+                    บันทึก
+                </button>
+
+              
+                </a>
+            </div>
+
+        </form>
+
+    </div>
+</div>

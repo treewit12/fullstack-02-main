@@ -1,10 +1,15 @@
 <%- include('navbar') %>
+<link rel="stylesheet" href="/css/style.css">
 
-<h1>รายการ Employees</h1>
+<h1>Employees</h1>
 
-<a href="/employees/add">+ เพิ่ม Employee</a>
+<a href="/employees/add" class="btn-success">
+    + เพิ่ม Employees
+</a>
 
-<table>
+<br><br>
+
+<table border="1" cellpadding="8" cellspacing="0" width="100%">
     <thead>
         <tr>
             <th>ID</th>
@@ -23,8 +28,16 @@
                 <td><%= e.position %></td>
                 <td><%= e.phone %></td>
                 <td>
-                    <a href="/employees/edit/<%= e.employee_id %>">แก้ไข</a> |
-                    <a href="/employees/delete/<%= e.employee_id %>">ลบ</a>
+                    <a href="/employees/edit/<%= e.employee_id %>" 
+                       class="btn-edit">
+                       แก้ไข
+                    </a>
+
+                    <a href="/employees/delete/<%= e.employee_id %>" 
+                       class="btn-delete"
+                       onclick="return confirm('ยืนยันการลบ?')">
+                       ลบ
+                    </a>
                 </td>
             </tr>
         <% }) %>

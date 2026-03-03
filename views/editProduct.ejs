@@ -1,23 +1,84 @@
-
 <link rel="stylesheet" href="/css/style.css">
-<h2>แก้ไขสินค้า</h2>
 
-<form action="/products/update/<%= product.id %>" method="POST">
-    <input type="text" name="name" value="<%= product.name %>" required>
-    <input type="text" name="brand" value="<%= product.brand %>">
-    <input type="number" name="price" value="<%= product.price %>">
-    <input type="number" name="stock" value="<%= product.stock %>">
+<div class="container">
+    <div class="form-card">
 
-    <select name="category_id">
-        <% categories.forEach(c => { %>
-            <option value="<%= c.id %>"
-                <%= c.id == product.category_id ? 'selected' : '' %>>
-                <%= c.name %>
-            </option>
-        <% }) %>
-    </select>
+        <a href="/products" class="back-link">
+            ← กลับไปหน้าสินค้า
+        </a>
 
-    <button type="submit">บันทึก</button>
-</form>
+        <h1>แก้ไขสินค้า</h1>
 
-<a href="/products">กลับ</a>
+        <form action="/products/update/<%= product.id %>" method="POST">
+
+            <div class="form-group">
+                <label>ชื่อสินค้า</label>
+                <input type="text"
+                       name="name"
+                       value="<%= product.name %>"
+                       required>
+            </div>
+
+            <div class="form-group">
+                <label>ยี่ห้อ</label>
+                <input type="text"
+                       name="brand"
+                       value="<%= product.brand %>">
+            </div>
+
+            <div class="form-group">
+                <label>ราคา (บาท)</label>
+                <input type="number"
+                       name="price"
+                       value="<%= product.price %>"
+                       min="0"
+                       required>
+            </div>
+
+            <div class="form-group">
+                <label>จำนวนคงเหลือ</label>
+                <input type="number"
+                       name="stock"
+                       value="<%= product.stock %>"
+                       min="0"
+                       required>
+            </div>
+
+            <div class="form-group">
+                <label>หมวดหมู่</label>
+                <select name="category_id" required>
+                    <% categories.forEach(c => { %>
+                        <option value="<%= c.id %>"
+                            <%= c.id == product.category_id ? 'selected' : '' %>>
+                            <%= c.name %>
+                        </option>
+                    <% }) %>
+                </select>
+            </div>
+
+            <!-- ✅ เพิ่ม Supplier ตรงนี้ -->
+            <div class="form-group">
+                <label>Supplier</label>
+                <select name="supplier_id" required>
+                    <% suppliers.forEach(s => { %>
+                        <option value="<%= s.id %>"
+                            <%= s.id == product.supplier_id ? 'selected' : '' %>>
+                            <%= s.name %>
+                        </option>
+                    <% }) %>
+                </select>
+            </div>
+
+            <div style="display:flex; gap:10px;">
+                <button type="submit" class="btn-success">
+                    บันทึกการแก้ไข
+                </button>
+
+                
+                </a>
+            </div>
+
+        </form>
+
+    </div>
+</div>

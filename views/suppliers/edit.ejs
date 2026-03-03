@@ -1,35 +1,54 @@
 <%- include('../navbar') %>
+<link rel="stylesheet" href="/css/style.css">
 
-<h1>แก้ไข Supplier</h1>
+<div class="container">
+    <div class="form-card">
 
-<form method="POST" action="/suppliers/update/<%= supplier.id %>">
+        <a href="/suppliers" class="back-link">← กลับไปหน้า Supplier</a>
 
-    <label>ชื่อ:</label>
-    <input type="text"
-           name="name"
-           value="<%= supplier.name %>"
-           required>
-    <br><br>
+        <h1>แก้ไข Supplier</h1>
 
-    <label>เบอร์:</label>
-    <input type="text"
-           name="phone"
-           value="<%= supplier.phone %>">
-    <br><br>
+        <form method="POST" action="/suppliers/update/<%= supplier.id %>">
 
-    <label>Email:</label>
-    <input type="email"
-           name="email"
-           value="<%= supplier.email %>">
-    <br><br>
+            <div class="form-group">
+                <label>ชื่อ Supplier</label>
+                <input type="text"
+                       name="name"
+                       value="<%= supplier.name %>"
+                       required>
+            </div>
 
-    <label>ที่อยู่:</label>
-    <input type="text"
-           name="address"
-           value="<%= supplier.address %>">
-    <br><br>
+            <div class="form-group">
+                <label>เบอร์โทร</label>
+                <input type="text"
+                       name="phone"
+                       value="<%= supplier.phone %>">
+            </div>
 
-    <button type="submit">อัปเดต</button>
-    <a href="/suppliers">ยกเลิก</a>
+            <div class="form-group">
+                <label>Email</label>
+                <input type="email"
+                       name="email"
+                       value="<%= supplier.email %>">
+            </div>
 
-</form>
+            <div class="form-group">
+                <label>ที่อยู่</label>
+                <input type="text"
+                       name="address"
+                       value="<%= supplier.address %>">
+            </div>
+
+            <div style="display:flex; gap:10px;">
+                <button type="submit" class="btn-success">
+                    บันทึกการแก้ไข
+                </button>
+
+                
+                </a>
+            </div>
+
+        </form>
+
+    </div>
+</div>

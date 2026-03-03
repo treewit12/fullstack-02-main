@@ -1,26 +1,52 @@
 <%- include('../navbar') %>
+<link rel="stylesheet" href="/css/style.css">
 
-<h1>เพิ่ม Supplier</h1>
+<div class="container">
+    <div class="form-card">
 
-<form action="/suppliers/add" method="POST">
+        <a href="/suppliers" class="back-link">
+            ← กลับไปหน้า Supplier
+        </a>
 
-    <label>ชื่อ:</label>
-    <input type="text" name="name" required>
-    <br><br>
+        <h1>เพิ่ม Supplier</h1>
 
-    <label>เบอร์:</label>
-    <input type="text" name="phone">
-    <br><br>
+        <form action="/suppliers/add" method="POST">
 
-    <label>Email:</label>
-    <input type="email" name="email">
-    <br><br>
+            <div class="form-group">
+                <label>ชื่อ Supplier</label>
+                <input type="text"
+                       name="name"
+                       required>
+            </div>
 
-    <label>ที่อยู่:</label>
-    <input type="text" name="address">
-    <br><br>
+            <div class="form-group">
+                <label>เบอร์โทร</label>
+                <input type="text"
+                       name="phone">
+            </div>
 
-    <button type="submit">บันทึก</button>
-    <a href="/suppliers">ยกเลิก</a>
+            <div class="form-group">
+                <label>Email</label>
+                <input type="email"
+                       name="email">
+            </div>
 
-</form>
+            <div class="form-group">
+                <label>ที่อยู่</label>
+                <input type="text"
+                       name="address">
+            </div>
+
+            <div style="display:flex; gap:10px;">
+                <button type="submit" class="btn-success">
+                    บันทึก
+                </button>
+
+             
+                </a>
+            </div>
+
+        </form>
+
+    </div>
+</div>

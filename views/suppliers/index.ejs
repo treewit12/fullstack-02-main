@@ -1,8 +1,12 @@
 <%- include('../navbar') %>
+<link rel="stylesheet" href="/style.css">
 
-<h1>รายการ Supplier</h1>
+<h1>Supplier</h1>
 
-<a href="/suppliers/add">+ เพิ่ม Supplier</a>
+<a href="/suppliers/add" class="btn-success">
+    + เพิ่ม Supplier
+</a>
+
 <br><br>
 
 <table border="1" cellpadding="8">
@@ -23,9 +27,16 @@
             <td><%= supplier.email %></td>
             <td><%= supplier.address %></td>
             <td>
-                <a href="/suppliers/edit/<%= supplier.id %>">แก้ไข</a> |
+                <a href="/suppliers/edit/<%= supplier.id %>" 
+                   class="btn-edit">
+                   แก้ไข
+                </a>
+
                 <a href="/suppliers/delete/<%= supplier.id %>" 
-                   onclick="return confirm('ยืนยันการลบ?')">ลบ</a>
+                   class="btn-delete"
+                   onclick="return confirm('ยืนยันการลบ?')">
+                   ลบ
+                </a>
             </td>
         </tr>
     <% }) %>
