@@ -1,0 +1,32 @@
+<%- include('navbar') %>
+
+<h1>รายการ Employees</h1>
+
+<a href="/employees/add">+ เพิ่ม Employee</a>
+
+<table>
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>ชื่อพนักงาน</th>
+            <th>ตำแหน่ง</th>
+            <th>เบอร์โทร</th>
+            <th>จัดการ</th>
+        </tr>
+    </thead>
+
+    <tbody>
+        <% employees.forEach(e => { %>
+            <tr>
+                <td><%= e.employee_id %></td>
+                <td><%= e.employee_name %></td>
+                <td><%= e.position %></td>
+                <td><%= e.phone %></td>
+                <td>
+                    <a href="/employees/edit/<%= e.employee_id %>">แก้ไข</a> |
+                    <a href="/employees/delete/<%= e.employee_id %>">ลบ</a>
+                </td>
+            </tr>
+        <% }) %>
+    </tbody>
+</table>

@@ -2,33 +2,39 @@
 
 <h1>เพิ่มรายการ Transaction</h1>
 
-<form action="/transactions" method="POST">
+<form action="/transactions/create" method="POST">
 
-    <label>สินค้า</label>
+    <label>สินค้า:</label>
     <select name="product_id" required>
         <% products.forEach(p => { %>
             <option value="<%= p.id %>"><%= p.name %></option>
         <% }) %>
     </select>
-
     <br><br>
 
-    <label>ประเภทรายการ</label>
-    <select name="transaction_type" required>
-        <option value="IN">รับเข้า</option>
-        <option value="OUT">จ่ายออก</option>
+    <label>พนักงาน:</label>
+    <select name="employee_id" required>
+        <% employees.forEach(e => { %>
+            <option value="<%= e.employee_id %>">
+                <%= e.employee_name %>
+            </option>
+        <% }) %>
     </select>
-
     <br><br>
 
-    <label>จำนวน</label>
-    <input type="number" name="quantity" required>
-
+    <label>ประเภท:</label>
+    <select name="transaction_type" required>
+        <option value="IN">IN</option>
+        <option value="OUT">OUT</option>
+    </select>
     <br><br>
 
-    <label>ราคารวม</label>
-    <input type="number" name="total_price" required>
+    <label>จำนวน:</label>
+    <input type="number" name="quantity" min="1" required>
+    <br><br>
 
+    <label>ราคารวม:</label>
+    <input type="number" name="total_price" step="0.01" min="0" required>
     <br><br>
 
     <button type="submit">บันทึก</button>

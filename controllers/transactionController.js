@@ -1,7 +1,8 @@
 const db = require('../src/db');
 
+
 // ======================
-// แสดงรายการ
+// แสดงรายการทั้งหมด
 // ======================
 exports.getTransactions = (req, res) => {
 
@@ -10,6 +11,7 @@ exports.getTransactions = (req, res) => {
             t.id,
             p.name AS product_name,
             COALESCE(c.name, '-') AS category_name,
+            COALESCE(e.employee_name, '-') AS employee_name,
             UPPER(t.transaction_type) AS transaction_type,
             t.quantity,
             t.total_price,
@@ -17,37 +19,71 @@ exports.getTransactions = (req, res) => {
         FROM transactions t
         LEFT JOIN products p ON t.product_id = p.id
         LEFT JOIN categories c ON p.category_id = c.id
+        LEFT JOIN employees e ON t.employee_id = e.employee_id
         ORDER BY t.id DESC
     `;
 
     db.all(sql, [], (err, transactions) => {
+
         if (err) {
-            console.error(err);
-            return res.status(500).send("Database error (transactions)");
+            console.error("SQL ERROR:", err);
+            return res.status(500).send(err.message);
         }
 
         res.render('transactions', {
             transactions,
             currentPage: 'transactions'
         });
+
     });
 };
 
 
+
 // ======================
-// เพิ่มรายการใหม่ + อัปเดต Stock (แบบปลอดภัย)
+// แสดงหน้าเพิ่ม Transaction
+// ======================
+exports.showCreateForm = (req, res) => {
+
+    db.all("SELECT id, name FROM products", [], (err, products) => {
+        if (err) return res.status(500).send(err.message);
+
+        db.all("SELECT employee_id, employee_name FROM employees", [], (err, employees) => {
+            if (err) return res.status(500).send(err.message);
+
+            res.render("addTransaction", {
+                products,
+                employees,
+                currentPage: 'transactions'
+            });
+        });
+    });
+};
+
+
+
+// ======================
+// เพิ่มรายการใหม่ + อัปเดต Stock
 // ======================
 exports.createTransaction = (req, res) => {
 
-    let { product_id, transaction_type, quantity, total_price } = req.body;
+    console.log("BODY:", req.body); // 👈 debug ดูค่าที่ส่งมา
 
-    // แปลงค่า
+    let { product_id, employee_id, transaction_type, quantity, total_price } = req.body;
+
+    product_id = parseInt(product_id);
+    employee_id = parseInt(employee_id);
     quantity = parseInt(quantity);
     total_price = parseFloat(total_price);
-    transaction_type = transaction_type?.toUpperCase();
+    transaction_type = transaction_type ? transaction_type.toUpperCase() : null;
 
-    // ตรวจสอบข้อมูล
-    if (!product_id || !transaction_type || quantity <= 0 || isNaN(total_price)) {
+    if (
+        isNaN(product_id) ||
+        isNaN(employee_id) ||
+        !transaction_type ||
+        isNaN(quantity) || quantity <= 0 ||
+        isNaN(total_price)
+    ) {
         return res.status(400).send("Invalid data");
     }
 
@@ -55,7 +91,6 @@ exports.createTransaction = (req, res) => {
         return res.status(400).send("Transaction type must be IN or OUT");
     }
 
-    // เช็ค stock ก่อน
     db.get("SELECT stock FROM products WHERE id = ?", [product_id], (err, product) => {
 
         if (err) {
@@ -71,8 +106,7 @@ exports.createTransaction = (req, res) => {
 
         if (transaction_type === 'IN') {
             newStock += quantity;
-        } 
-        else if (transaction_type === 'OUT') {
+        } else {
 
             if (product.stock < quantity) {
                 return res.status(400).send("Stock ไม่พอ");
@@ -81,18 +115,15 @@ exports.createTransaction = (req, res) => {
             newStock -= quantity;
         }
 
-        // ======================
-        // เริ่ม DB Transaction
-        // ======================
         db.serialize(() => {
 
             db.run("BEGIN TRANSACTION");
 
             db.run(`
                 INSERT INTO transactions
-                (product_id, transaction_type, quantity, total_price)
-                VALUES (?, ?, ?, ?)
-            `, [product_id, transaction_type, quantity, total_price], function(err) {
+                (product_id, employee_id, transaction_type, quantity, total_price)
+                VALUES (?, ?, ?, ?, ?)
+            `, [product_id, employee_id, transaction_type, quantity, total_price], function(err) {
 
                 if (err) {
                     console.error(err);
@@ -112,7 +143,7 @@ exports.createTransaction = (req, res) => {
                         }
 
                         db.run("COMMIT");
-                        res.redirect('/dashboard');
+                        res.redirect('/transactions');
                     }
                 );
 

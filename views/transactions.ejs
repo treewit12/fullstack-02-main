@@ -2,10 +2,23 @@
 
 <h1>Transactions</h1>
 
+<!-- ปุ่มเพิ่มรายการ -->
+<a href="/transactions/add" 
+   style="display:inline-block;
+          padding:8px 14px;
+          background:#28a745;
+          color:white;
+          text-decoration:none;
+          border-radius:6px;
+          margin-bottom:15px;">
+    + เพิ่มรายการ
+</a>
+
 <table border="1" cellpadding="8">
 <tr>
     <th>สินค้า</th>
     <th>หมวดหมู่</th>
+    <th>พนักงาน</th>
     <th>ประเภทรายการ</th>
     <th>จำนวน</th>
     <th>ราคารวม</th>
@@ -16,14 +29,13 @@
 <tr>
     <td><%= t.product_name %></td>
     <td><%= t.category_name %></td>
+    <td><%= t.employee_name %></td>
 
     <td>
         <% if (t.transaction_type === 'IN') { %>
             <span style="color:green;">รับเข้า</span>
         <% } else if (t.transaction_type === 'OUT') { %>
             <span style="color:red;">จ่ายออก</span>
-        <% } else { %>
-            <%= t.transaction_type || '-' %>
         <% } %>
     </td>
 

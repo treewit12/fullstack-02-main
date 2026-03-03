@@ -1,0 +1,28 @@
+<%- include('navbar') %>
+<head>
+    <title>แก้ไขพนักงาน</title>
+</head>
+<body>
+
+<h2>แก้ไขพนักงาน</h2>
+
+<form action="/employees/update/<%= employee.employee_id %>" method="POST">
+
+    <label>ชื่อพนักงาน:</label>
+    <input type="text" name="employee_name"
+           value="<%= employee.employee_name %>" required><br><br>
+
+    <label>ตำแหน่ง:</label>
+    <input type="text" name="position"
+           value="<%= employee.position %>" required><br><br>
+
+    <label>เบอร์โทร:</label>
+    <input type="text" name="phone"
+           value="<%= employee.phone %>" required><br><br>
+
+    <button type="submit">อัปเดต</button>
+</form>
+<br>
+<a href="/employees">ยกเลิก</a>
+
+</body>

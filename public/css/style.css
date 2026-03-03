@@ -168,3 +168,73 @@ nav a:hover {
     box-shadow: 0 4px 10px rgba(0,0,0,0.05);
     text-align: center;
 }
+/* ================= FORM LAYOUT (เพิ่มใหม่) ================= */
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 18px;
+}
+
+.form-group label {
+    margin-bottom: 6px;
+    font-weight: 500;
+}
+
+/* ทำให้ input/select เต็มความกว้าง */
+.form-group input,
+.form-group select {
+    width: 100%;
+    margin-right: 0;
+}
+
+/* ปุ่มเขียวสำหรับบันทึก */
+.btn-success {
+    background-color: #10b981;
+    color: white;
+}
+
+.btn-success:hover {
+    background-color: #059669;
+}
+
+/* ลิงก์กลับ */
+.back-link {
+    display: inline-block;
+    margin-bottom: 20px;
+    color: #2563eb;
+    font-weight: 500;
+}
+
+.back-link:hover {
+    text-decoration: underline;
+}
+
+/* จำกัดความกว้างฟอร์มให้ดูสวย */
+.form-container {
+    max-width: 500px;
+}
+/* ===== Center Page Layout ===== */
+
+.container {
+    max-width: 900px;
+    margin: 0 auto; /* จัดกึ่งกลางแนวนอน */
+}
+
+/* จัด card ให้อยู่กลาง */
+.center-wrapper {
+    display: flex;
+    justify-content: center;
+}
+
+/* กำหนดความกว้างฟอร์ม */
+.card {
+    width: 100%;
+    max-width: 500px;
+}
+
+/* จัดปุ่มให้อยู่กลาง */
+.card form button {
+    display: block;
+    margin: 10px auto 0;
+}
