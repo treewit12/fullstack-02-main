@@ -20,10 +20,7 @@ exports.getProducts = (req, res) => {
     `;
 
     db.all(sql, [], (err, products) => {
-        if (err) {
-            console.log(err.message);
-            return res.send(err.message);
-        }
+        if (err) return res.send(err.message);
 
         db.all("SELECT * FROM categories", [], (err, categories) => {
             if (err) return res.send(err.message);
@@ -44,9 +41,38 @@ exports.getProducts = (req, res) => {
 
 
 // ==========================
+// ฟอร์มแก้ไขสินค้า
+// ==========================
+exports.editForm = (req, res) => {
+
+    const id = req.params.id;
+
+    db.get("SELECT * FROM products WHERE id = ?", [id], (err, product) => {
+
+        if (err || !product) return res.send("ไม่พบสินค้า");
+
+        db.all("SELECT * FROM categories", [], (err, categories) => {
+
+            db.all("SELECT * FROM suppliers", [], (err, suppliers) => {
+
+                res.render('editProduct', {
+                    product,
+                    categories,
+                    suppliers
+                });
+
+            });
+        });
+    });
+};
+
+
+// ==========================
 // เพิ่มสินค้า
 // ==========================
 exports.addProduct = (req, res) => {
+
+    if (!req.session.user) return res.redirect('/login');
 
     let { name, brand, price, stock, category_id, supplier_id } = req.body;
 
@@ -59,32 +85,34 @@ exports.addProduct = (req, res) => {
         return res.send("ข้อมูลไม่ถูกต้อง");
     }
 
+    const employeeId = req.session.user.employee_id;
+
     db.serialize(() => {
 
         db.run("BEGIN TRANSACTION");
 
-        db.run(
-            `INSERT INTO products 
-            (name, brand, price, stock, category_id, supplier_id)
-            VALUES (?, ?, ?, ?, ?, ?)`,
-            [name, brand || null, price, stock, category_id, supplier_id],
-            function (err) {
+        // ✅ เช็คก่อนว่ามีสินค้าอยู่แล้วไหม
+        db.get(
+            `SELECT * FROM products WHERE name = ? AND brand = ?`,
+            [name, brand || null],
+            (err, existingProduct) => {
 
                 if (err) {
                     db.run("ROLLBACK");
                     return res.send(err.message);
                 }
 
-                const productId = this.lastID;
+                // ==========================
+                // 🔥 ถ้ามีสินค้าอยู่แล้ว → เพิ่ม stock
+                // ==========================
+                if (existingProduct) {
 
-                if (stock > 0) {
+                    const newStock = existingProduct.stock + stock;
                     const totalPrice = price * stock;
 
                     db.run(
-                        `INSERT INTO transactions 
-                        (product_id, transaction_type, quantity, total_price)
-                        VALUES (?, 'IN', ?, ?)`,
-                        [productId, stock, totalPrice],
+                        `UPDATE products SET stock = ?, price = ? WHERE id = ?`,
+                        [newStock, price, existingProduct.id],
                         (err) => {
 
                             if (err) {
@@ -92,49 +120,67 @@ exports.addProduct = (req, res) => {
                                 return res.send(err.message);
                             }
 
-                            db.run("COMMIT");
-                            res.redirect('/products');
+                            db.run(
+                                `INSERT INTO transactions
+                                 (product_id, employee_id, transaction_type, quantity, total_price)
+                                 VALUES (?, ?, 'IN', ?, ?)`,
+                                [existingProduct.id, employeeId, stock, totalPrice],
+                                (err) => {
+
+                                    if (err) {
+                                        db.run("ROLLBACK");
+                                        return res.send(err.message);
+                                    }
+
+                                    db.run("COMMIT");
+                                    res.redirect('/products');
+                                }
+                            );
                         }
                     );
-                } else {
-                    db.run("COMMIT");
-                    res.redirect('/products');
-                }
 
+                } 
+                // ==========================
+                // ✅ ถ้ายังไม่มี → INSERT ใหม่
+                // ==========================
+                else {
+
+                    db.run(
+                        `INSERT INTO products 
+                        (name, brand, price, stock, category_id, supplier_id)
+                        VALUES (?, ?, ?, ?, ?, ?)`,
+                        [name, brand || null, price, stock, category_id, supplier_id],
+                        function (err) {
+
+                            if (err) {
+                                db.run("ROLLBACK");
+                                return res.send(err.message);
+                            }
+
+                            const productId = this.lastID;
+                            const totalPrice = price * stock;
+
+                            db.run(
+                                `INSERT INTO transactions 
+                                (product_id, employee_id, transaction_type, quantity, total_price)
+                                VALUES (?, ?, 'IN', ?, ?)`,
+                                [productId, employeeId, stock, totalPrice],
+                                (err) => {
+
+                                    if (err) {
+                                        db.run("ROLLBACK");
+                                        return res.send(err.message);
+                                    }
+
+                                    db.run("COMMIT");
+                                    res.redirect('/products');
+                                }
+                            );
+                        }
+                    );
+                }
             }
         );
-
-    });
-};
-
-
-// ==========================
-// แก้ไขสินค้า (ฟอร์ม)
-// ==========================
-exports.editForm = (req, res) => {
-
-    const id = req.params.id;
-
-    db.get("SELECT * FROM products WHERE id = ?", [id], (err, product) => {
-
-        if (err || !product) {
-            return res.send("ไม่พบสินค้า");
-        }
-
-        db.all("SELECT * FROM categories", [], (err, categories) => {
-            if (err) return res.send(err.message);
-
-            db.all("SELECT * FROM suppliers", [], (err, suppliers) => {
-                if (err) return res.send(err.message);
-
-                res.render('editProduct', { 
-                    product, 
-                    categories,
-                    suppliers,
-                    currentPage: 'products'
-                });
-            });
-        });
     });
 };
 
@@ -144,6 +190,8 @@ exports.editForm = (req, res) => {
 // ==========================
 exports.updateProduct = (req, res) => {
 
+    if (!req.session.user) return res.redirect('/login');
+
     const id = req.params.id;
     let { name, brand, price, stock, category_id, supplier_id } = req.body;
 
@@ -155,6 +203,8 @@ exports.updateProduct = (req, res) => {
     if (!name || isNaN(price) || isNaN(stock) || stock < 0) {
         return res.send("ข้อมูลไม่ถูกต้อง");
     }
+
+    const employeeId = req.session.user.employee_id;
 
     db.get("SELECT * FROM products WHERE id = ?", [id], (err, product) => {
 
@@ -187,9 +237,9 @@ exports.updateProduct = (req, res) => {
 
                         db.run(
                             `INSERT INTO transactions 
-                            (product_id, transaction_type, quantity, total_price)
-                            VALUES (?, ?, ?, ?)`,
-                            [id, type, quantity, totalPrice],
+                            (product_id, employee_id, transaction_type, quantity, total_price)
+                            VALUES (?, ?, ?, ?, ?)`,
+                            [id, employeeId, type, quantity, totalPrice],
                             (err) => {
 
                                 if (err) {
@@ -203,15 +253,15 @@ exports.updateProduct = (req, res) => {
                         );
 
                     } else {
+
                         db.run("COMMIT");
                         res.redirect('/products');
+
                     }
 
                 }
             );
-
         });
-
     });
 };
 
@@ -224,7 +274,8 @@ exports.deleteProduct = (req, res) => {
     const id = req.params.id;
 
     db.run("DELETE FROM products WHERE id = ?", [id], (err) => {
-        if (err) return res.send("ลบสินค้าไม่สำเร็จ");
+
+        if (err) return res.send("ลบไม่สำเร็จ");
 
         res.redirect('/products');
     });
@@ -236,12 +287,16 @@ exports.deleteProduct = (req, res) => {
 // ==========================
 exports.sellProduct = (req, res) => {
 
+    if (!req.session.user) return res.redirect('/login');
+
     const id = req.params.id;
     const quantity = parseInt(req.body.quantity);
 
     if (isNaN(quantity) || quantity <= 0) {
         return res.send("จำนวนไม่ถูกต้อง");
     }
+
+    const employeeId = req.session.user.employee_id;
 
     db.get("SELECT * FROM products WHERE id = ?", [id], (err, product) => {
 
@@ -270,9 +325,9 @@ exports.sellProduct = (req, res) => {
 
                     db.run(
                         `INSERT INTO transactions
-                        (product_id, transaction_type, quantity, total_price)
-                        VALUES (?, 'OUT', ?, ?)`,
-                        [id, quantity, totalPrice],
+                         (product_id, employee_id, transaction_type, quantity, total_price)
+                         VALUES (?, ?, 'OUT', ?, ?)`,
+                        [id, employeeId, quantity, totalPrice],
                         (err) => {
 
                             if (err) {
@@ -287,8 +342,6 @@ exports.sellProduct = (req, res) => {
 
                 }
             );
-
         });
-
     });
 };

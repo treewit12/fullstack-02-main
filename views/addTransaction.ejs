@@ -12,20 +12,36 @@
 
         <form action="/transactions/create" method="POST">
 
+            <!-- สินค้า -->
             <div class="form-group">
                 <label>สินค้า</label>
-                <select name="product_id" required>
+                <select name="product_id" id="productSelect" required>
                     <% products.forEach(p => { %>
-                        <option value="<%= p.id %>">
+                        <option value="<%= p.id %>" data-price="<%= p.price || 0 %>">
                             <%= p.name %>
                         </option>
                     <% }) %>
                 </select>
             </div>
 
+            <!-- ประเภท -->
             <div class="form-group">
+                <label>ประเภท</label>
+                <select name="transaction_type" id="typeSelect" required>
+
+                    <% if (user.role === 'admin') { %>
+                        <option value="IN">รับเข้า (IN)</option>
+                    <% } %>
+
+                    <option value="OUT">ขายออก (OUT)</option>
+                </select>
+            </div>
+
+            <!-- พนักงาน (ใช้เฉพาะ OUT) -->
+            <div class="form-group" id="employeeGroup">
                 <label>พนักงาน</label>
-                <select name="employee_id" required>
+                <select name="employee_id">
+                    <option value="">-- ใช้ผู้ที่ Login อยู่ --</option>
                     <% employees.forEach(e => { %>
                         <option value="<%= e.employee_id %>">
                             <%= e.employee_name %>
@@ -34,41 +50,61 @@
                 </select>
             </div>
 
-            <div class="form-group">
-                <label>ประเภท</label>
-                <select name="transaction_type" required>
-                    <option value="IN">รับเข้า (IN)</option>
-                    <option value="OUT">ขายออก (OUT)</option>
-                </select>
-            </div>
-
+            <!-- จำนวน -->
             <div class="form-group">
                 <label>จำนวน</label>
                 <input type="number"
+                       id="quantityInput"
                        name="quantity"
                        min="1"
                        required>
             </div>
 
+            <!-- ราคารวม -->
             <div class="form-group">
                 <label>ราคารวม (บาท)</label>
                 <input type="number"
+                       id="totalPriceInput"
                        name="total_price"
                        step="0.01"
                        min="0"
                        required>
             </div>
 
-            <div style="display:flex; gap:10px;">
-                <button type="submit" class="btn-success">
-                    บันทึก
-                </button>
-
-              
-                </a>
-            </div>
+            <button type="submit" class="btn-success">
+                บันทึก
+            </button>
 
         </form>
 
     </div>
 </div>
+
+<script>
+    const productSelect = document.getElementById("productSelect");
+    const quantityInput = document.getElementById("quantityInput");
+    const totalPriceInput = document.getElementById("totalPriceInput");
+    const typeSelect = document.getElementById("typeSelect");
+    const employeeGroup = document.getElementById("employeeGroup");
+
+    function calculateTotal() {
+        const selectedOption = productSelect.options[productSelect.selectedIndex];
+        const price = parseFloat(selectedOption.getAttribute("data-price")) || 0;
+        const quantity = parseInt(quantityInput.value) || 0;
+        totalPriceInput.value = (price * quantity).toFixed(2);
+    }
+
+    function toggleFields() {
+        if (typeSelect.value === "IN") {
+            employeeGroup.style.display = "none";
+        } else {
+            employeeGroup.style.display = "block";
+        }
+    }
+
+    productSelect.addEventListener("change", calculateTotal);
+    quantityInput.addEventListener("input", calculateTotal);
+    typeSelect.addEventListener("change", toggleFields);
+
+    toggleFields();
+</script>

@@ -1,24 +1,100 @@
 <%- include('navbar') %>
 
-<div class="container">
-    <h1>Report</h1>
+<div class="container report-page">
 
-    <table>
-        <thead>
-            <tr>
-                <th>ประเภท</th>
-                <th>จำนวนรายการ</th>
-                <th>จำนวนสินค้ารวม</th>
-            </tr>
-        </thead>
-        <tbody>
-            <% data.forEach(row => { %>
+    <div class="report-header">
+        <div>
+            <h1>📊 รายงานระบบสต็อก</h1>
+            <p class="subtitle">
+                ภาพรวมธุรกรรมรับเข้าและจ่ายออก พร้อมการวิเคราะห์สินค้า
+            </p>
+        </div>
+
+        <a href="/reports/export/excel" class="btn-export">
+            📊 Export Excel
+        </a>
+    </div>
+
+
+    <!-- ================= Summary ================= -->
+    <div class="card">
+        <h2>สรุปการเคลื่อนไหวสินค้า</h2>
+
+        <table>
+            <thead>
                 <tr>
-                    <td><%= row.transaction_type %></td>
-                    <td><%= row.total_transactions %></td>
-                    <td><%= row.total_quantity %></td>
+                    <th>ประเภท</th>
+                    <th>จำนวนรายการ</th>
+                    <th>จำนวนสินค้ารวม</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% summary.forEach(row => { %>
+                    <tr>
+                        <td><%= row.transaction_type %></td>
+                        <td><%= row.total_transactions %></td>
+                        <td><%= row.total_quantity %></td>
+                    </tr>
+                <% }) %>
+            </tbody>
+        </table>
+    </div>
+
+
+    <!-- ================= Top Section ================= -->
+    <div class="grid-2">
+
+        <div class="card">
+            <h3>🏆 สินค้าขายดีที่สุด (Top 5 OUT)</h3>
+            <table>
+                <tr>
+                    <th>สินค้า</th>
+                    <th>จำนวนที่ขาย</th>
+                </tr>
+                <% topSold.forEach(item => { %>
+                    <tr>
+                        <td><%= item.name %></td>
+                        <td><%= item.total_sold %></td>
+                    </tr>
+                <% }) %>
+            </table>
+        </div>
+
+        <div class="card">
+            <h3>📦 สินค้ารับเข้ามากที่สุด (Top 5 IN)</h3>
+            <table>
+                <tr>
+                    <th>สินค้า</th>
+                    <th>จำนวนที่รับเข้า</th>
+                </tr>
+                <% topIn.forEach(item => { %>
+                    <tr>
+                        <td><%= item.name %></td>
+                        <td><%= item.total_in %></td>
+                    </tr>
+                <% }) %>
+            </table>
+        </div>
+
+    </div>
+
+
+    <!-- ================= Low Stock ================= -->
+    <div class="card warning-card">
+        <h3>⚠️ สินค้าใกล้หมด</h3>
+
+        <table>
+            <tr>
+                <th>สินค้า</th>
+                <th>คงเหลือ</th>
+            </tr>
+            <% lowStock.forEach(item => { %>
+                <tr>
+                    <td><%= item.name %></td>
+                    <td><%= item.stock %></td>
                 </tr>
             <% }) %>
-        </tbody>
-    </table>
+        </table>
+    </div>
+
 </div>

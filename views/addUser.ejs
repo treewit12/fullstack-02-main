@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>เพิ่มผู้ใช้งาน</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+<%- include('navbar') %>
+
+<div class="auth-wrapper">
+    <div class="auth-box">
+
+        <h2>เพิ่มผู้ใช้งาน</h2>
+
+        <form action="/users/add" method="POST" class="auth-form">
+
+            <div class="auth-group">
+                <label>Username</label>
+                <input type="text" name="username" required>
+            </div>
+
+            <div class="auth-group">
+                <label>Password</label>
+                <input type="password" name="password" required>
+            </div>
+
+            <div class="auth-group">
+                <label>พนักงาน</label>
+                <select name="employee_id" required>
+                    <% employees.forEach(emp => { %>
+                        <option value="<%= emp.employee_id %>">
+                            <%= emp.employee_name %>
+                        </option>
+                    <% }) %>
+                </select>
+            </div>
+
+            <div class="auth-group">
+                <label>Role</label>
+                <select name="role">
+                    <option value="user">User</option>
+                    <option value="admin">Admin</option>
+                </select>
+            </div>
+
+            <button type="submit" class="auth-button">
+                บันทึก
+            </button>
+
+        </form>
+
+    </div>
+</div>
+
+</body>
+</html>

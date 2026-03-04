@@ -6,12 +6,17 @@ const db = require('../src/db');
 // ======================
 exports.getTransactions = (req, res) => {
 
+    if (!req.session.user) {
+        return res.redirect('/login');
+    }
+
     const sql = `
         SELECT 
             t.id,
             p.name AS product_name,
             COALESCE(c.name, '-') AS category_name,
             COALESCE(e.employee_name, '-') AS employee_name,
+            COALESCE(s.name, '-') AS supplier_name,
             UPPER(t.transaction_type) AS transaction_type,
             t.quantity,
             t.total_price,
@@ -19,6 +24,7 @@ exports.getTransactions = (req, res) => {
         FROM transactions t
         LEFT JOIN products p ON t.product_id = p.id
         LEFT JOIN categories c ON p.category_id = c.id
+        LEFT JOIN suppliers s ON p.supplier_id = s.id
         LEFT JOIN employees e ON t.employee_id = e.employee_id
         ORDER BY t.id DESC
     `;
@@ -32,31 +38,10 @@ exports.getTransactions = (req, res) => {
 
         res.render('transactions', {
             transactions,
-            currentPage: 'transactions'
+            currentPage: 'transactions',
+            user: req.session.user
         });
 
-    });
-};
-
-
-
-// ======================
-// แสดงหน้าเพิ่ม Transaction
-// ======================
-exports.showCreateForm = (req, res) => {
-
-    db.all("SELECT id, name FROM products", [], (err, products) => {
-        if (err) return res.status(500).send(err.message);
-
-        db.all("SELECT employee_id, employee_name FROM employees", [], (err, employees) => {
-            if (err) return res.status(500).send(err.message);
-
-            res.render("addTransaction", {
-                products,
-                employees,
-                currentPage: 'transactions'
-            });
-        });
     });
 };
 
@@ -67,19 +52,19 @@ exports.showCreateForm = (req, res) => {
 // ======================
 exports.createTransaction = (req, res) => {
 
-    console.log("BODY:", req.body); // 👈 debug ดูค่าที่ส่งมา
+    if (!req.session.user) {
+        return res.redirect('/login');
+    }
 
-    let { product_id, employee_id, transaction_type, quantity, total_price } = req.body;
+    let { product_id, transaction_type, quantity, total_price } = req.body;
 
     product_id = parseInt(product_id);
-    employee_id = parseInt(employee_id);
     quantity = parseInt(quantity);
     total_price = parseFloat(total_price);
-    transaction_type = transaction_type ? transaction_type.toUpperCase() : null;
+    transaction_type = transaction_type?.toUpperCase();
 
     if (
         isNaN(product_id) ||
-        isNaN(employee_id) ||
         !transaction_type ||
         isNaN(quantity) || quantity <= 0 ||
         isNaN(total_price)
@@ -91,16 +76,19 @@ exports.createTransaction = (req, res) => {
         return res.status(400).send("Transaction type must be IN or OUT");
     }
 
+    // 🔒 =========================
+    // SECURITY CHECK (สำคัญมาก)
+    // ==========================
+    if (transaction_type === 'IN' && req.session.user.role !== 'admin') {
+        return res.status(403).send("คุณไม่มีสิทธิ์รับสินค้าเข้า");
+    }
+
+    const employee_id = req.session.user.employee_id;
+
     db.get("SELECT stock FROM products WHERE id = ?", [product_id], (err, product) => {
 
-        if (err) {
-            console.error(err);
-            return res.status(500).send("Database error");
-        }
-
-        if (!product) {
-            return res.status(404).send("Product not found");
-        }
+        if (err) return res.status(500).send("Database error");
+        if (!product) return res.status(404).send("Product not found");
 
         let newStock = product.stock;
 
@@ -123,10 +111,11 @@ exports.createTransaction = (req, res) => {
                 INSERT INTO transactions
                 (product_id, employee_id, transaction_type, quantity, total_price)
                 VALUES (?, ?, ?, ?, ?)
-            `, [product_id, employee_id, transaction_type, quantity, total_price], function(err) {
+            `,
+            [product_id, employee_id, transaction_type, quantity, total_price],
+            function(err) {
 
                 if (err) {
-                    console.error(err);
                     db.run("ROLLBACK");
                     return res.status(500).send("Insert error");
                 }
@@ -137,7 +126,6 @@ exports.createTransaction = (req, res) => {
                     (err) => {
 
                         if (err) {
-                            console.error(err);
                             db.run("ROLLBACK");
                             return res.status(500).send("Stock update error");
                         }
