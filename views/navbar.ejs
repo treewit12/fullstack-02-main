@@ -5,23 +5,32 @@
     <title>ComStock</title>
     <link rel="stylesheet" href="/css/style.css">
 </head>
+
 <body>
 
 <% if (user) { %>
 <nav>
+
     <a href="/dashboard">Dashboard</a>
     <a href="/products">Products</a>
     <a href="/transactions">Transactions</a>
-    <a href="/suppliers">Suppliers</a>
-    <a href="/employees">Employees</a>
-    <a href="/reports">Reports</a>
-    <a href="/reports/stock">Stock Report</a>
+
+    <% if (user.role === 'admin') { %>
+        <a href="/suppliers">Suppliers</a>
+        <a href="/employees">Employees</a>
+        <a href="/reports">Reports</a>
+        <a href="/reports/stock">Stock Report</a>
+    <% } %>
 
     <div class="nav-right">
         👤 <%= user.username %> |
         <a href="/logout">Logout</a>
     </div>
+
 </nav>
+
 <hr>
 <% } %>
 
+</body>
+</html>
