@@ -56,15 +56,17 @@ exports.createTransaction = (req, res) => {
         return res.redirect('/login');
     }
 
-    let { product_id, transaction_type, quantity, total_price } = req.body;
+    let { product_id, employee_id, transaction_type, quantity, total_price } = req.body;
 
     product_id = parseInt(product_id);
+    employee_id = parseInt(employee_id);
     quantity = parseInt(quantity);
     total_price = parseFloat(total_price);
     transaction_type = transaction_type?.toUpperCase();
 
     if (
         isNaN(product_id) ||
+        isNaN(employee_id) ||
         !transaction_type ||
         isNaN(quantity) || quantity <= 0 ||
         isNaN(total_price)
@@ -76,14 +78,10 @@ exports.createTransaction = (req, res) => {
         return res.status(400).send("Transaction type must be IN or OUT");
     }
 
-    // 🔒 =========================
-    // SECURITY CHECK (สำคัญมาก)
-    // ==========================
+    // 🔒 SECURITY CHECK
     if (transaction_type === 'IN' && req.session.user.role !== 'admin') {
         return res.status(403).send("คุณไม่มีสิทธิ์รับสินค้าเข้า");
     }
-
-    const employee_id = req.session.user.employee_id;
 
     db.get("SELECT stock FROM products WHERE id = ?", [product_id], (err, product) => {
 
