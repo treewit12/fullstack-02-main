@@ -3,76 +3,111 @@ const ExcelJS = require('exceljs');
 
 
 // ===============================
-// 📊 หน้า Report หลัก
+// 📊 Report หน้าแรก
 // ===============================
-exports.getUserPerformance = (req, res) => {
+exports.getReportHome = (req, res) => {
 
-    // สรุป IN / OUT
-    const summarySQL = `
+    res.render('report_home');
+
+};
+
+
+
+// ===============================
+// 📦 Stock Report
+// ===============================
+exports.getStockReport = (req, res) => {
+
+    const sql = `
         SELECT 
-            transaction_type,
-            COUNT(id) AS total_transactions,
-            SUM(quantity) AS total_quantity
-        FROM transactions
-        GROUP BY transaction_type
+            id,
+            name,
+            price,
+            stock
+        FROM products
+        ORDER BY stock ASC
     `;
 
-    db.all(summarySQL, [], (err, summary) => {
+    db.all(sql, [], (err, rows) => {
+
         if (err) {
             console.error(err);
-            return res.send("Error loading summary");
+            return res.send("Error loading stock report");
         }
 
-        // 🏆 Top 5 ขายดีที่สุด
-        const topSoldSQL = `
-            SELECT p.name, SUM(t.quantity) as total_sold
-            FROM transactions t
-            JOIN products p ON t.product_id = p.id
-            WHERE t.transaction_type = 'OUT'
-            GROUP BY p.id
-            ORDER BY total_sold DESC
-            LIMIT 5
-        `;
-
-        db.all(topSoldSQL, [], (err, topSold) => {
-            if (err) return res.send("Error loading top sold");
-
-            // 📦 Top 5 รับเข้ามากสุด
-            const topInSQL = `
-                SELECT p.name, SUM(t.quantity) as total_in
-                FROM transactions t
-                JOIN products p ON t.product_id = p.id
-                WHERE t.transaction_type = 'IN'
-                GROUP BY p.id
-                ORDER BY total_in DESC
-                LIMIT 5
-            `;
-
-            db.all(topInSQL, [], (err, topIn) => {
-                if (err) return res.send("Error loading top in");
-
-                // ⚠️ สินค้าใกล้หมด
-                const lowStockSQL = `
-                    SELECT name, stock
-                    FROM products
-                    WHERE stock <= 10
-                    ORDER BY stock ASC
-                    LIMIT 5
-                `;
-
-                db.all(lowStockSQL, [], (err, lowStock) => {
-                    if (err) return res.send("Error loading low stock");
-
-                    res.render('user_performance', {
-                        summary,
-                        topSold,
-                        topIn,
-                        lowStock
-                    });
-                });
-            });
+        res.render('stock_report', {
+            products: rows
         });
+
     });
+
+};
+
+
+
+// ===============================
+// 👨‍💻 Employee Sales Report
+// ===============================
+exports.getEmployeeSalesReport = (req, res) => {
+
+    const sql = `
+        SELECT 
+            e.employee_name,
+            COUNT(t.id) as total_transactions,
+            SUM(t.quantity) as total_quantity
+        FROM transactions t
+        JOIN employees e ON t.employee_id = e.employee_id
+        WHERE t.transaction_type = 'OUT'
+        GROUP BY e.employee_id
+        ORDER BY total_quantity DESC
+    `;
+
+    db.all(sql, [], (err, rows) => {
+
+        if (err) {
+            console.error(err);
+            return res.send("Error loading employee report");
+        }
+
+        res.render('employee_sales_report', {
+            employees: rows
+        });
+
+    });
+
+};
+
+
+
+// ===============================
+// 📅 Daily Sales Report
+// ===============================
+exports.getDailySalesReport = (req, res) => {
+
+    const sql = `
+        SELECT 
+            DATE(created_at) as sale_date,
+            COUNT(id) as total_transactions,
+            SUM(quantity) as total_quantity
+        FROM transactions
+        WHERE transaction_type = 'OUT'
+        GROUP BY DATE(created_at)
+        ORDER BY sale_date DESC
+    `;
+
+    db.all(sql, [], (err, rows) => {
+
+        if (err) {
+            console.error(err);
+            return res.send("Error loading daily report");
+        }
+
+        res.render('daily_sales_report', {
+            sales: rows
+        });
+
+    });
+
 };
 
 
@@ -101,23 +136,27 @@ exports.exportExcel = async (req, res) => {
     `;
 
     db.all(sql, [], async (err, rows) => {
+
         if (err) {
             console.error(err);
             return res.send("Export error");
         }
 
         rows.forEach(row => {
+
             worksheet.addRow({
                 type: row.transaction_type,
                 transactions: row.total_transactions,
                 quantity: row.total_quantity
             });
+
         });
 
         res.setHeader(
             'Content-Type',
             'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
         );
+
         res.setHeader(
             'Content-Disposition',
             'attachment; filename=report.xlsx'
@@ -125,5 +164,7 @@ exports.exportExcel = async (req, res) => {
 
         await workbook.xlsx.write(res);
         res.end();
+
     });
+
 };

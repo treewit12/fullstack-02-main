@@ -16,6 +16,8 @@ const reportRoutes = require('./routes/report');
 const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/userRoutes'); // ✅ เพิ่ม
 
+
+
 // ================= BASIC SETUP =================
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
@@ -74,6 +76,7 @@ app.use('/suppliers', isLoggedIn, supplierRoutes);
 app.use('/employees', isLoggedIn, employeeRoutes);
 app.use('/users', isLoggedIn, userRoutes);   // ✅ ระบบเพิ่มผู้ใช้ (Admin Only)
 app.use('/reports', isLoggedIn, reportRoutes);
+
 
 // ================= START SERVER =================
 app.listen(3000, () => {
