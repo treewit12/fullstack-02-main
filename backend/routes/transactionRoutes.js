@@ -5,7 +5,7 @@ const db = require('../src/db');
 
 
 // ======================
-// แสดงหน้าเพิ่มรายการ
+// ข้อมูลสำหรับฟอร์มเพิ่มรายการ (API)
 // ======================
 router.get('/add', (req, res) => {
 
@@ -13,20 +13,17 @@ router.get('/add', (req, res) => {
 
         if (err) {
             console.error(err);
-            return res.send("Error loading products");
+            return res.status(500).json({ error: "Error loading products" });
         }
 
         db.all("SELECT * FROM employees", [], (err2, employees) => {
 
             if (err2) {
                 console.error(err2);
-                return res.send("Error loading employees");
+                return res.status(500).json({ error: "Error loading employees" });
             }
 
-            res.render('addTransaction', { 
-                products,
-                employees
-            });
+            res.json({ products, employees });
 
         });
 

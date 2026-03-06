@@ -4,9 +4,11 @@
   "description": "fullstack-02",
   "main": "index.js",
   "scripts": {
-    "start": "node src/index.js",
+    "start:frontend": "node frontend/app.js",
+    "start:backend": "node backend/app.js",
     "format": "prettier --write *.js",
-    "dev": "nodemon src/index.js"
+    "dev:frontend": "nodemon frontend/app.js",
+    "dev:backend": "nodemon backend/app.js"
   },
   "repository": {
     "type": "git",

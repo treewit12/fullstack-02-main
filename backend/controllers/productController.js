@@ -2,7 +2,7 @@ const db = require('../src/db');
 
 
 // ==========================
-// แสดงสินค้า
+// แสดงสินค้า (API)
 // ==========================
 exports.getProducts = (req, res) => {
 
@@ -20,20 +20,15 @@ exports.getProducts = (req, res) => {
     `;
 
     db.all(sql, [], (err, products) => {
-        if (err) return res.send(err.message);
+        if (err) return res.status(500).json({ error: err.message });
 
         db.all("SELECT * FROM categories", [], (err, categories) => {
-            if (err) return res.send(err.message);
+            if (err) return res.status(500).json({ error: err.message });
 
             db.all("SELECT * FROM suppliers", [], (err, suppliers) => {
-                if (err) return res.send(err.message);
+                if (err) return res.status(500).json({ error: err.message });
 
-                res.render('products', { 
-                    products, 
-                    categories,
-                    suppliers,
-                    currentPage: 'products'
-                });
+                res.json({ products, categories, suppliers });
             });
         });
     });
@@ -41,7 +36,7 @@ exports.getProducts = (req, res) => {
 
 
 // ==========================
-// ฟอร์มแก้ไขสินค้า
+// ข้อมูลสินค้าเดียว
 // ==========================
 exports.editForm = (req, res) => {
 
@@ -49,18 +44,15 @@ exports.editForm = (req, res) => {
 
     db.get("SELECT * FROM products WHERE id = ?", [id], (err, product) => {
 
-        if (err || !product) return res.send("ไม่พบสินค้า");
+        if (err || !product) return res.status(404).json({ error: "ไม่พบสินค้า" });
 
         db.all("SELECT * FROM categories", [], (err, categories) => {
+            if (err) return res.status(500).json({ error: err.message });
 
             db.all("SELECT * FROM suppliers", [], (err, suppliers) => {
+                if (err) return res.status(500).json({ error: err.message });
 
-                res.render('editProduct', {
-                    product,
-                    categories,
-                    suppliers
-                });
-
+                res.json({ product, categories, suppliers });
             });
         });
     });
@@ -68,11 +60,11 @@ exports.editForm = (req, res) => {
 
 
 // ==========================
-// เพิ่มสินค้า
+// เพิ่มสินค้า (API)
 // ==========================
 exports.addProduct = (req, res) => {
 
-    if (!req.session.user) return res.redirect('/login');
+    if (!req.session.user) return res.status(401).json({ error: 'Unauthorized' });
 
     let { name, brand, price, stock, category_id, supplier_id } = req.body;
 
@@ -82,7 +74,7 @@ exports.addProduct = (req, res) => {
     supplier_id = supplier_id || null;
 
     if (!name || isNaN(price) || isNaN(stock) || stock < 0) {
-        return res.send("ข้อมูลไม่ถูกต้อง");
+        return res.status(400).json({ error: "ข้อมูลไม่ถูกต้อง" });
     }
 
     const employeeId = req.session.user.employee_id;
@@ -91,7 +83,6 @@ exports.addProduct = (req, res) => {
 
         db.run("BEGIN TRANSACTION");
 
-        // ✅ เช็คก่อนว่ามีสินค้าอยู่แล้วไหม
         db.get(
             `SELECT * FROM products WHERE name = ? AND brand = ?`,
             [name, brand || null],
@@ -99,12 +90,9 @@ exports.addProduct = (req, res) => {
 
                 if (err) {
                     db.run("ROLLBACK");
-                    return res.send(err.message);
+                    return res.status(500).json({ error: err.message });
                 }
 
-                // ==========================
-                // 🔥 ถ้ามีสินค้าอยู่แล้ว → เพิ่ม stock
-                // ==========================
                 if (existingProduct) {
 
                     const newStock = existingProduct.stock + stock;
@@ -117,7 +105,7 @@ exports.addProduct = (req, res) => {
 
                             if (err) {
                                 db.run("ROLLBACK");
-                                return res.send(err.message);
+                                return res.status(500).json({ error: err.message });
                             }
 
                             db.run(
@@ -129,21 +117,17 @@ exports.addProduct = (req, res) => {
 
                                     if (err) {
                                         db.run("ROLLBACK");
-                                        return res.send(err.message);
+                                        return res.status(500).json({ error: err.message });
                                     }
 
                                     db.run("COMMIT");
-                                    res.redirect('/products');
+                                    return res.json({ success: true, updated: existingProduct.id, newStock });
                                 }
                             );
                         }
                     );
 
-                } 
-                // ==========================
-                // ✅ ถ้ายังไม่มี → INSERT ใหม่
-                // ==========================
-                else {
+                } else {
 
                     db.run(
                         `INSERT INTO products 
@@ -154,7 +138,7 @@ exports.addProduct = (req, res) => {
 
                             if (err) {
                                 db.run("ROLLBACK");
-                                return res.send(err.message);
+                                return res.status(500).json({ error: err.message });
                             }
 
                             const productId = this.lastID;
@@ -169,11 +153,11 @@ exports.addProduct = (req, res) => {
 
                                     if (err) {
                                         db.run("ROLLBACK");
-                                        return res.send(err.message);
+                                        return res.status(500).json({ error: err.message });
                                     }
 
                                     db.run("COMMIT");
-                                    res.redirect('/products');
+                                    return res.json({ success: true, created: productId });
                                 }
                             );
                         }
@@ -186,11 +170,11 @@ exports.addProduct = (req, res) => {
 
 
 // ==========================
-// อัปเดตสินค้า
+// อัปเดตสินค้า (API)
 // ==========================
 exports.updateProduct = (req, res) => {
 
-    if (!req.session.user) return res.redirect('/login');
+    if (!req.session.user) return res.status(401).json({ error: 'Unauthorized' });
 
     const id = req.params.id;
     let { name, brand, price, stock, category_id, supplier_id } = req.body;
@@ -201,14 +185,15 @@ exports.updateProduct = (req, res) => {
     supplier_id = supplier_id || null;
 
     if (!name || isNaN(price) || isNaN(stock) || stock < 0) {
-        return res.send("ข้อมูลไม่ถูกต้อง");
+        return res.status(400).json({ error: "ข้อมูลไม่ถูกต้อง" });
     }
 
     const employeeId = req.session.user.employee_id;
 
     db.get("SELECT * FROM products WHERE id = ?", [id], (err, product) => {
 
-        if (err || !product) return res.send("ไม่พบสินค้า");
+        if (err) return res.status(500).json({ error: err.message });
+        if (!product) return res.status(404).json({ error: "ไม่พบสินค้า" });
 
         const oldStock = product.stock;
         const diff = stock - oldStock;
@@ -226,7 +211,7 @@ exports.updateProduct = (req, res) => {
 
                     if (err) {
                         db.run("ROLLBACK");
-                        return res.send(err.message);
+                        return res.status(500).json({ error: err.message });
                     }
 
                     if (diff !== 0) {
@@ -244,18 +229,18 @@ exports.updateProduct = (req, res) => {
 
                                 if (err) {
                                     db.run("ROLLBACK");
-                                    return res.send(err.message);
+                                    return res.status(500).json({ error: err.message });
                                 }
 
                                 db.run("COMMIT");
-                                res.redirect('/products');
+                                return res.json({ success: true });
                             }
                         );
 
                     } else {
 
                         db.run("COMMIT");
-                        res.redirect('/products');
+                        return res.json({ success: true });
 
                     }
 
@@ -267,43 +252,45 @@ exports.updateProduct = (req, res) => {
 
 
 // ==========================
-// ลบสินค้า
+// ลบสินค้า (API)
 // ==========================
 exports.deleteProduct = (req, res) => {
 
     const id = req.params.id;
 
-    db.run("DELETE FROM products WHERE id = ?", [id], (err) => {
+    db.run("DELETE FROM products WHERE id = ?", [id], function(err) {
 
-        if (err) return res.send("ลบไม่สำเร็จ");
+        if (err) return res.status(500).json({ error: "ลบไม่สำเร็จ" });
+        if (this.changes === 0) return res.status(404).json({ error: "ไม่พบสินค้า" });
 
-        res.redirect('/products');
+        res.json({ success: true });
     });
 };
 
 
 // ==========================
-// ขายสินค้า
+// ขายสินค้า (API)
 // ==========================
 exports.sellProduct = (req, res) => {
 
-    if (!req.session.user) return res.redirect('/login');
+    if (!req.session.user) return res.status(401).json({ error: 'Unauthorized' });
 
     const id = req.params.id;
     const quantity = parseInt(req.body.quantity);
 
     if (isNaN(quantity) || quantity <= 0) {
-        return res.send("จำนวนไม่ถูกต้อง");
+        return res.status(400).json({ error: "จำนวนไม่ถูกต้อง" });
     }
 
     const employeeId = req.session.user.employee_id;
 
     db.get("SELECT * FROM products WHERE id = ?", [id], (err, product) => {
 
-        if (err || !product) return res.send("ไม่พบสินค้า");
+        if (err) return res.status(500).json({ error: err.message });
+        if (!product) return res.status(404).json({ error: "ไม่พบสินค้า" });
 
         if (product.stock < quantity) {
-            return res.send("สินค้าไม่พอ");
+            return res.status(400).json({ error: "สินค้าไม่พอ" });
         }
 
         const newStock = product.stock - quantity;
@@ -320,7 +307,7 @@ exports.sellProduct = (req, res) => {
 
                     if (err) {
                         db.run("ROLLBACK");
-                        return res.send("อัปเดตสต็อกไม่สำเร็จ");
+                        return res.status(500).json({ error: "อัปเดตสต็อกไม่สำเร็จ" });
                     }
 
                     db.run(
@@ -332,11 +319,11 @@ exports.sellProduct = (req, res) => {
 
                             if (err) {
                                 db.run("ROLLBACK");
-                                return res.send("บันทึกธุรกรรมไม่สำเร็จ");
+                                return res.status(500).json({ error: "บันทึกธุรกรรมไม่สำเร็จ" });
                             }
 
                             db.run("COMMIT");
-                            res.redirect('/products');
+                            return res.json({ success: true, newStock });
                         }
                     );
 

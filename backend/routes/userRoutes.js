@@ -24,7 +24,7 @@ function requireAdmin(req, res, next) {
 }
 
 // ======================
-// แสดงหน้าเพิ่ม user
+// รับข้อมูลการเพิ่ม user (API)
 // ======================
 router.get('/add', requireLogin, requireAdmin, (req, res) => {
 
@@ -35,21 +35,21 @@ router.get('/add', requireLogin, requireAdmin, (req, res) => {
         WHERE u.employee_id IS NULL
     `, (err, employees) => {
 
-        if (err) return res.send("Error loading employees");
+        if (err) return res.status(500).json({ error: "Error loading employees" });
 
-        res.render('addUser', { employees });
+        res.json({ employees });
     });
 });
 
 // ======================
-// บันทึก user
+// เพิ่ม user (API)
 // ======================
 router.post('/add', requireLogin, requireAdmin, async (req, res) => {
 
     const { username, password, employee_id, role } = req.body;
 
     if (!username || !password || !employee_id) {
-        return res.send("กรอกข้อมูลไม่ครบ");
+        return res.status(400).json({ error: "กรอกข้อมูลไม่ครบ" });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -62,12 +62,12 @@ router.post('/add', requireLogin, requireAdmin, async (req, res) => {
 
             if (err) {
                 if (err.message.includes("UNIQUE")) {
-                    return res.send("Username นี้ถูกใช้แล้ว");
+                    return res.status(409).json({ error: "Username นี้ถูกใช้แล้ว" });
                 }
-                return res.send("เกิดข้อผิดพลาด");
+                return res.status(500).json({ error: "เกิดข้อผิดพลาด" });
             }
 
-            res.redirect('/dashboard');
+            res.status(201).json({ success: true, id: this.lastID });
         }
     );
 });

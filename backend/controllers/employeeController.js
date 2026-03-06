@@ -2,7 +2,7 @@ const db = require('../src/db');
 
 
 // ======================
-// แสดงทั้งหมด
+// แสดงทั้งหมด (API)
 // ======================
 exports.getEmployees = (req, res) => {
 
@@ -13,10 +13,10 @@ exports.getEmployees = (req, res) => {
 
             if (err) {
                 console.error(err);
-                return res.status(500).send("Database error");
+                return res.status(500).json({ error: "Database error" });
             }
 
-            res.render("Employees", { employees });
+            res.json({ employees });
         }
     );
 };
@@ -24,23 +24,24 @@ exports.getEmployees = (req, res) => {
 
 
 // ======================
-// หน้าเพิ่ม
+// ข้อมูลฟิลด์สำหรับสร้าง
 // ======================
 exports.showAddForm = (req, res) => {
-    res.render("addEmployee");
+    // ถ้าไม่มีข้อมูลพิเศษให้ส่งกลับ
+    res.json({ fields: ["employee_name", "position", "phone"] });
 };
 
 
 
 // ======================
-// เพิ่มข้อมูล
+// เพิ่มข้อมูล (API)
 // ======================
 exports.createEmployee = (req, res) => {
 
     const { employee_name, position, phone } = req.body;
 
     if (!employee_name || !position || !phone) {
-        return res.status(400).send("กรอกข้อมูลไม่ครบ");
+        return res.status(400).json({ error: "กรอกข้อมูลไม่ครบ" });
     }
 
     db.run(
@@ -50,10 +51,10 @@ exports.createEmployee = (req, res) => {
 
             if (err) {
                 console.error(err);
-                return res.status(500).send("Insert error");
+                return res.status(500).json({ error: "Insert error" });
             }
 
-            res.redirect('/employees');
+            res.status(201).json({ success: true, id: this.lastID });
         }
     );
 };
@@ -61,7 +62,7 @@ exports.createEmployee = (req, res) => {
 
 
 // ======================
-// หน้าแก้ไข
+// ข้อมูลพนักงานเดียว
 // ======================
 exports.showEditForm = (req, res) => {
 
@@ -74,14 +75,14 @@ exports.showEditForm = (req, res) => {
 
             if (err) {
                 console.error(err);
-                return res.status(500).send("Database error");
+                return res.status(500).json({ error: "Database error" });
             }
 
             if (!employee) {
-                return res.status(404).send("ไม่พบพนักงาน");
+                return res.status(404).json({ error: "ไม่พบพนักงาน" });
             }
 
-            res.render("editEmployee", { employee });
+            res.json({ employee });
         }
     );
 };
@@ -89,7 +90,7 @@ exports.showEditForm = (req, res) => {
 
 
 // ======================
-// บันทึกแก้ไข
+// บันทึกแก้ไข (API)
 // ======================
 exports.updateEmployee = (req, res) => {
 
@@ -97,7 +98,7 @@ exports.updateEmployee = (req, res) => {
     const { employee_name, position, phone } = req.body;
 
     if (!employee_name || !position || !phone) {
-        return res.status(400).send("กรอกข้อมูลไม่ครบ");
+        return res.status(400).json({ error: "กรอกข้อมูลไม่ครบ" });
     }
 
     db.run(
@@ -107,14 +108,14 @@ exports.updateEmployee = (req, res) => {
 
             if (err) {
                 console.error(err);
-                return res.status(500).send("Update error");
+                return res.status(500).json({ error: "Update error" });
             }
 
             if (this.changes === 0) {
-                return res.status(404).send("ไม่พบพนักงานที่จะแก้ไข");
+                return res.status(404).json({ error: "ไม่พบพนักงานที่จะแก้ไข" });
             }
 
-            res.redirect('/employees');
+            res.json({ success: true });
         }
     );
 };
@@ -122,7 +123,7 @@ exports.updateEmployee = (req, res) => {
 
 
 // ======================
-// ลบ
+// ลบ (API)
 // ======================
 exports.deleteEmployee = (req, res) => {
 
@@ -135,14 +136,14 @@ exports.deleteEmployee = (req, res) => {
 
             if (err) {
                 console.error(err);
-                return res.status(500).send("Delete error");
+                return res.status(500).json({ error: "Delete error" });
             }
 
             if (this.changes === 0) {
-                return res.status(404).send("ไม่พบพนักงานที่ต้องการลบ");
+                return res.status(404).json({ error: "ไม่พบพนักงานที่ต้องการลบ" });
             }
 
-            res.redirect('/employees');
+            res.json({ success: true });
         }
     );
 };

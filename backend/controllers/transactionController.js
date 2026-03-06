@@ -2,12 +2,12 @@ const db = require('../src/db');
 
 
 // ======================
-// แสดงรายการทั้งหมด
+// แสดงรายการทั้งหมด (API)
 // ======================
 exports.getTransactions = (req, res) => {
 
     if (!req.session.user) {
-        return res.redirect('/login');
+        return res.status(401).json({ error: 'Unauthorized' });
     }
 
     const sql = `
@@ -33,14 +33,10 @@ exports.getTransactions = (req, res) => {
 
         if (err) {
             console.error("SQL ERROR:", err);
-            return res.status(500).send(err.message);
+            return res.status(500).json({ error: err.message });
         }
 
-        res.render('transactions', {
-            transactions,
-            currentPage: 'transactions',
-            user: req.session.user
-        });
+        res.json({ transactions });
 
     });
 };
@@ -48,12 +44,12 @@ exports.getTransactions = (req, res) => {
 
 
 // ======================
-// เพิ่มรายการใหม่ + อัปเดต Stock
+// เพิ่มรายการใหม่ + อัปเดต Stock (API)
 // ======================
 exports.createTransaction = (req, res) => {
 
     if (!req.session.user) {
-        return res.redirect('/login');
+        return res.status(401).json({ error: 'Unauthorized' });
     }
 
     let { product_id, employee_id, transaction_type, quantity, total_price } = req.body;
@@ -71,22 +67,22 @@ exports.createTransaction = (req, res) => {
         isNaN(quantity) || quantity <= 0 ||
         isNaN(total_price)
     ) {
-        return res.status(400).send("Invalid data");
+        return res.status(400).json({ error: "Invalid data" });
     }
 
     if (transaction_type !== 'IN' && transaction_type !== 'OUT') {
-        return res.status(400).send("Transaction type must be IN or OUT");
+        return res.status(400).json({ error: "Transaction type must be IN or OUT" });
     }
 
     // 🔒 SECURITY CHECK
     if (transaction_type === 'IN' && req.session.user.role !== 'admin') {
-        return res.status(403).send("คุณไม่มีสิทธิ์รับสินค้าเข้า");
+        return res.status(403).json({ error: "คุณไม่มีสิทธิ์รับสินค้าเข้า" });
     }
 
     db.get("SELECT stock FROM products WHERE id = ?", [product_id], (err, product) => {
 
-        if (err) return res.status(500).send("Database error");
-        if (!product) return res.status(404).send("Product not found");
+        if (err) return res.status(500).json({ error: "Database error" });
+        if (!product) return res.status(404).json({ error: "Product not found" });
 
         let newStock = product.stock;
 
@@ -95,7 +91,7 @@ exports.createTransaction = (req, res) => {
         } else {
 
             if (product.stock < quantity) {
-                return res.status(400).send("Stock ไม่พอ");
+                return res.status(400).json({ error: "Stock ไม่พอ" });
             }
 
             newStock -= quantity;
@@ -115,7 +111,7 @@ exports.createTransaction = (req, res) => {
 
                 if (err) {
                     db.run("ROLLBACK");
-                    return res.status(500).send("Insert error");
+                    return res.status(500).json({ error: "Insert error" });
                 }
 
                 db.run(
@@ -125,11 +121,11 @@ exports.createTransaction = (req, res) => {
 
                         if (err) {
                             db.run("ROLLBACK");
-                            return res.status(500).send("Stock update error");
+                            return res.status(500).json({ error: "Stock update error" });
                         }
 
                         db.run("COMMIT");
-                        res.redirect('/transactions');
+                        res.json({ success: true, newStock });
                     }
                 );
 

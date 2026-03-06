@@ -5,12 +5,16 @@ exports.getDashboard = (req, res) => {
     db.serialize(() => {
 
         db.get("SELECT COUNT(*) as total FROM products", (err, row1) => {
+            if (err) return res.status(500).json({ error: err.message });
 
             db.get("SELECT SUM(quantity) as total FROM transactions WHERE transaction_type='IN'", (err, row2) => {
+                if (err) return res.status(500).json({ error: err.message });
 
                 db.get("SELECT SUM(quantity) as total FROM transactions WHERE transaction_type='OUT'", (err, row3) => {
+                    if (err) return res.status(500).json({ error: err.message });
 
                     db.get("SELECT SUM(total_price) as total FROM transactions WHERE transaction_type='OUT'", (err, row4) => {
+                        if (err) return res.status(500).json({ error: err.message });
 
                         db.all(`
                             SELECT categories.name,
@@ -20,6 +24,7 @@ exports.getDashboard = (req, res) => {
                             LEFT JOIN products ON products.category_id = categories.id
                             GROUP BY categories.id
                         `, (err, categories) => {
+                            if (err) return res.status(500).json({ error: err.message });
 
                             db.all(`
                                 SELECT p.name as product_name,
@@ -31,8 +36,9 @@ exports.getDashboard = (req, res) => {
                                 ORDER BY t.id DESC
                                 LIMIT 5
                             `, (err, recentTransactions) => {
+                                if (err) return res.status(500).json({ error: err.message });
 
-                                res.render('dashboard', {
+                                res.json({
                                     totalProducts: row1.total || 0,
                                     totalIn: row2.total || 0,
                                     totalOut: row3.total || 0,
