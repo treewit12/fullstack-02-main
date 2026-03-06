@@ -3,22 +3,44 @@ const ExcelJS = require('exceljs');
 
 
 // ===============================
-// 📊 Report หน้าแรก
+// 📊 Report หน้าแรก (Employee Sales)
 // ===============================
 exports.getReportHome = (req, res) => {
 
-    res.render('report_home');
+    const sql = `
+        SELECT 
+            e.employee_name,
+            COUNT(t.id) as total_transactions,
+            SUM(t.total_price) as total_sales
+        FROM transactions t
+        JOIN employees e ON t.employee_id = e.employee_id
+        WHERE t.transaction_type = 'OUT'
+        GROUP BY e.employee_id
+        ORDER BY total_sales DESC
+    `;
 
+    db.all(sql, [], (err, rows) => {
+
+        if (err) {
+            console.error(err);
+            return res.send("Error loading report");
+        }
+
+        res.render('report_home', {
+            employees: rows
+        });
+
+    });
 };
 
 
 
 // ===============================
-// 📦 Stock Report
+// 📦 Stock Report + Daily Sales
 // ===============================
 exports.getStockReport = (req, res) => {
 
-    const sql = `
+    const stockSQL = `
         SELECT 
             id,
             name,
@@ -28,19 +50,39 @@ exports.getStockReport = (req, res) => {
         ORDER BY stock ASC
     `;
 
-    db.all(sql, [], (err, rows) => {
+    const dailySQL = `
+        SELECT 
+            DATE(created_at) as sale_date,
+            COUNT(id) as total_transactions,
+            SUM(total_price) as total_sales
+        FROM transactions
+        WHERE transaction_type = 'OUT'
+        GROUP BY DATE(created_at)
+        ORDER BY sale_date DESC
+    `;
+
+    db.all(stockSQL, [], (err, products) => {
 
         if (err) {
             console.error(err);
             return res.send("Error loading stock report");
         }
 
-        res.render('stock_report', {
-            products: rows
+        db.all(dailySQL, [], (err, sales) => {
+
+            if (err) {
+                console.error(err);
+                return res.send("Error loading daily sales");
+            }
+
+            res.render('stock_report', {
+                products: products,
+                sales: sales
+            });
+
         });
 
     });
-
 };
 
 
@@ -54,12 +96,12 @@ exports.getEmployeeSalesReport = (req, res) => {
         SELECT 
             e.employee_name,
             COUNT(t.id) as total_transactions,
-            SUM(t.quantity) as total_quantity
+            SUM(t.total_price) as total_sales
         FROM transactions t
         JOIN employees e ON t.employee_id = e.employee_id
         WHERE t.transaction_type = 'OUT'
         GROUP BY e.employee_id
-        ORDER BY total_quantity DESC
+        ORDER BY total_sales DESC
     `;
 
     db.all(sql, [], (err, rows) => {
@@ -74,7 +116,6 @@ exports.getEmployeeSalesReport = (req, res) => {
         });
 
     });
-
 };
 
 
@@ -88,7 +129,7 @@ exports.getDailySalesReport = (req, res) => {
         SELECT 
             DATE(created_at) as sale_date,
             COUNT(id) as total_transactions,
-            SUM(quantity) as total_quantity
+            SUM(total_price) as total_sales
         FROM transactions
         WHERE transaction_type = 'OUT'
         GROUP BY DATE(created_at)
@@ -107,7 +148,6 @@ exports.getDailySalesReport = (req, res) => {
         });
 
     });
-
 };
 
 
@@ -123,14 +163,14 @@ exports.exportExcel = async (req, res) => {
     worksheet.columns = [
         { header: 'ประเภท', key: 'type', width: 15 },
         { header: 'จำนวนรายการ', key: 'transactions', width: 20 },
-        { header: 'จำนวนสินค้ารวม', key: 'quantity', width: 20 }
+        { header: 'ราคารวม', key: 'sales', width: 20 }
     ];
 
     const sql = `
         SELECT 
             transaction_type,
             COUNT(id) AS total_transactions,
-            SUM(quantity) AS total_quantity
+            SUM(total_price) AS total_sales
         FROM transactions
         GROUP BY transaction_type
     `;
@@ -147,7 +187,7 @@ exports.exportExcel = async (req, res) => {
             worksheet.addRow({
                 type: row.transaction_type,
                 transactions: row.total_transactions,
-                quantity: row.total_quantity
+                sales: row.total_sales
             });
 
         });
@@ -166,5 +206,4 @@ exports.exportExcel = async (req, res) => {
         res.end();
 
     });
-
 };

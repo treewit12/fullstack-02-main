@@ -1,22 +1,29 @@
 <%- include('navbar') %>
-
-<h1>📦 Stock Report</h1>
+<h2>📅 Daily Sales</h2>
 
 <table border="1">
-    <tr>
-        <th>ID</th>
-        <th>Product Name</th>
-        <th>Price</th>
-        <th>Stock</th>
-    </tr>
+<tr>
+<th>Date</th>
+<th>Total Transactions</th>
+<th>Total Sales</th>
+</tr>
 
-    <% products.forEach(p => { %>
-        <tr>
-            <td><%= p.id %></td>
-            <td><%= p.name %></td>
-            <td><%= p.price %></td>
-            <td><%= p.stock %></td>
-        </tr>
+<% if (sales && sales.length > 0) { %>
+
+    <% sales.forEach(s => { %>
+    <tr>
+        <td><%= s.sale_date %></td>
+        <td><%= s.total_transactions %></td>
+        <td>฿<%= s.total_sales ? s.total_sales.toLocaleString() : 0 %></td>
+    </tr>
     <% }) %>
+
+<% } else { %>
+
+<tr>
+<td colspan="3">No sales data</td>
+</tr>
+
+<% } %>
 
 </table>
